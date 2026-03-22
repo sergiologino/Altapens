@@ -1,0 +1,27 @@
+# Git и IDE
+.git
+.idea
+**/.idea
+*.iml
+
+# Зависимости и сборки (ставим/собираем в образе)
+node_modules
+**/node_modules
+**/dist
+**/build
+**/.gradle
+**/.vite
+*.tsbuildinfo
+
+# Локальное
+.env
+.env.*
+!.env.example
+**/.env.local
+
+# Прочее
+npm-debug.log*
+coverage
+.nyc_output
+*.md
+!README.md
