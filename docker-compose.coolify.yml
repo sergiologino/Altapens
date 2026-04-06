@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: altacare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pens_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d altacare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/altacare
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        VITE_API_SAME_ORIGIN: "true"
+    depends_on:
+      - backend
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pens.rule=Host(`pens.altacod.com`)
+      - traefik.http.routers.pens.entrypoints=http
+      - traefik.http.services.pens.loadbalancer.server.port=80
+
+volumes:
+  pens_pgdata:
