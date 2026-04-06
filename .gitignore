@@ -48,6 +48,10 @@ Desktop.ini
 *.njsproj
 *.sln
 
+# Локальный дистрибутив Gradle (сборка через Gradle Wrapper в apps/backend)
+tools/gradle-*/
+tools/gradle-*-bin.zip
+
 # Прочее
 .turbo/
 *.pid

@@ -40,7 +40,7 @@
 - Backend integration tests на `auth` и `care_network` проходят на H2 test-profile
 - Дизайн-система использует кастомные theme tokens, парную типографику, многослойные тени и отдельные роли по visual tone
 - Сборка `npm run build:web` проходит успешно
-- Сборка и тесты backend проходят через локальный Gradle distribution в `tools/gradle-8.10.2`
+- Сборка и тесты backend: из `apps/backend` через Gradle Wrapper (`gradlew` / `gradlew.bat`), дистрибутив Gradle в репозиторий не коммитится
 - Runtime backend в обычном профиле требует реальную PostgreSQL базу `altacare`; отдельный in-memory dev-profile пока не добавлен
 - В корне репозитория добавлены `RUN_LOCAL.md` (инструкция локального запуска на Windows) и опциональный `docker-compose.yml` только для PostgreSQL
 
