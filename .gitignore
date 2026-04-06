@@ -1,0 +1,53 @@
+# --- AltaPens (монорепозиторий: npm workspaces + Spring/Gradle) ---
+
+# Зависимости
+node_modules/
+
+# Переменные окружения и секреты (шаблоны *.example не игнорируем)
+.env
+.env.*
+!.env.example
+
+# Сборка фронтенда (Vite)
+dist/
+dist-ssr/
+*.tsbuildinfo
+.vite/
+
+# Сборка и кэш Gradle / JVM (backend)
+apps/backend/build/
+apps/backend/.gradle/
+**/out/
+**/*.class
+
+# Тесты и покрытие
+coverage/
+.nyc_output/
+
+# Логи
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Редакторы и временные файлы
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Прочее
+.turbo/
+*.pid

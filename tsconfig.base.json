@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/web/src/*"],
+      "@altapens/api-contracts": ["packages/api-contracts/src/index.ts"],
+      "@altapens/design-tokens": ["packages/design-tokens/src/index.ts"],
+      "@altapens/shared-types": ["packages/shared-types/src/index.ts"]
+    }
+  }
+}

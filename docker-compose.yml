@@ -1,0 +1,64 @@
+# Полный стек для проверки UI/UX и API: PostgreSQL + Spring Boot + nginx (статика + прокси /api).
+# Приложение в браузере: http://localhost:3080  (один origin, без CORS к backend).
+# Прямой доступ к API/Swagger (опционально): http://localhost:8090/swagger-ui/index.html
+#
+# Если порт 5432 занят локальным Postgres — смените проброс, например "5433:5432",
+# и задайте DB_URL в override или поднимите только web+backend против внешней БД.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: altapens-postgres
+    environment:
+      POSTGRES_DB: altacare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - altapens_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d altacare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: altapens-backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/altacare
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET:-docker-local-dev-jwt-secret-min-32-chars!!}
+      SERVER_PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+    ports:
+      - "8090:8080"
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        VITE_API_SAME_ORIGIN: "true"
+    container_name: altapens-web
+    ports:
+      - "3080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  altapens_pgdata:
