@@ -1,5 +1,11 @@
 # AI Changelog
 
+## 2026-04-09
+- Frontend: голосовой режим senior — Web Speech API (`voice-tts`, `voice-stt`, `voice-intents` + Vitest), панель «Удерживайте и говорите», озвучка при смене экрана, команды: приём/пропуск/отложить лекарство (при API), чек-ин, давление в note, SOS; `AppShell` поддерживает `mainClassName`; в спеке зафиксировано отложенное подключение MCP
+
+## 2026-04-08 (voice spec)
+- Добавлена спецификация двустороннего голосового режима для senior: `docs/ai/specs/voice-mode-senior.md` (Web Speech API, интенты, интеграция с checkin/medications/SOS, этапы)
+
 ## 2026-04-08
 - Backend: домен `medications` — Flyway `V2__medications.sql`, API `GET/POST /api/v1/care/medications`, `GET .../today-doses`, интеграционный тест `MedicationIntegrationTest`, демо-курс «Конкор» для Ивана в seed
 - Backend: Flyway `V3__wellbeing_and_intakes.sql` — `wellbeing_checkins`, `medication_intakes`; `CareSeniorResolver`; `POST/GET /care/checkins`, `POST /care/medications/intake`, `GET /care/timeline`; `@Transactional(readOnly)` на чтение с ленивыми связями; расширен `MedicationIntegrationTest`

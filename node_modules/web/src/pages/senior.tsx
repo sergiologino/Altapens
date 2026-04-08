@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
+import { SeniorVoiceShell } from '@/features/voice/SeniorVoiceShell'
 import { CheckinActions } from '@/features/senior-checkin/CheckinActions'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
 import { useAuthStore } from '@/app/store/auth-store'
@@ -43,7 +44,7 @@ const scaleClass: Record<'normal' | 'large' | 'x-large', string> = {
 }
 
 export const SeniorLayout = () => {
-  const { fontScale, highContrast } = useAccessibilityStore()
+  const { fontScale, highContrast, voiceEnabled } = useAccessibilityStore()
   const session = useAuthStore((state) => state.session)
   const logout = useAuthStore((state) => state.logout)
 
@@ -52,6 +53,7 @@ export const SeniorLayout = () => {
       <div className={scaleClass[fontScale]}>
         <AppShell
           role="senior"
+          mainClassName={voiceEnabled ? 'shell-main--voice-dock' : undefined}
           nav={
             <ShellNav
               title="Мой день"
@@ -74,6 +76,7 @@ export const SeniorLayout = () => {
           }
         >
           <FirstSessionTips role="senior" />
+          <SeniorVoiceShell />
           <Outlet />
         </AppShell>
       </div>

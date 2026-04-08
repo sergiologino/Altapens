@@ -47,6 +47,9 @@
 - Runtime backend требует PostgreSQL `altacare`: профиль **`local`** — подключение к уже запущенной БД; профиль **`dev`** — автозапуск PostgreSQL в Docker через `spring-boot-docker-compose` и `compose-dev-postgres.yml` на classpath (см. `RUN_LOCAL.md`); интеграционные тесты по-прежнему на H2
 - В корне репозитория: `RUN_LOCAL.md`, корневой `docker-compose.yml` (полный стек или только postgres); для JVM из IDE — профиль `dev` и compose-файл в `apps/backend/src/main/resources/`
 
+## Планируемое (спецификации)
+- **Голосовой режим senior (двусторонний):** реализован базовый контур в `apps/web/src/features/voice/` (TTS/STT, парсер фраз `voice-intents`, панель `SeniorVoiceShell` в layout senior); подробности и этапы расширения — `docs/ai/specs/voice-mode-senior.md`. **MCP/внешние источники** — позже, после стабилизации голоса (см. §11 той же спецификации).
+
 ## Что поддерживать в актуальном состоянии
 - фактическую структуру backend/frontend/landing
 - реализованные пользовательские сценарии

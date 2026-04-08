@@ -8,13 +8,18 @@ export const AppShell = ({
   children,
   role,
   nav,
-}: PropsWithChildren<{ role: 'senior' | 'caregiver'; nav: ReactNode }>) => (
+  mainClassName,
+}: PropsWithChildren<{
+  role: 'senior' | 'caregiver'
+  nav: ReactNode
+  mainClassName?: string
+}>) => (
   <div className={cx('app-shell', role === 'senior' ? 'shell-senior' : 'shell-caregiver')}>
     <div className="decor-orb decor-orb-primary" aria-hidden="true" />
     <div className="decor-orb decor-orb-secondary" aria-hidden="true" />
     <div className="shell-grid">
       <aside className="shell-nav">{nav}</aside>
-      <main className="shell-main">{children}</main>
+      <main className={cx('shell-main', mainClassName)}>{children}</main>
     </div>
   </div>
 )

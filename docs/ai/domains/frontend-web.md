@@ -19,6 +19,7 @@
 - senior-экраны: home, today, assistant, history, profile, SOS, anti-scam
 - caregiver-экраны: dashboard, seniors, senior detail, invite create, medication form, events, AI, settings
 - форма настройки лекарства на `React Hook Form + Zod`
+- **голос senior:** `features/voice` — озвучка маршрутов, удержание кнопки для распознавания (ru-RU), интенты → checkin / medications intake / SOS; при отключённой озвучке в профиле панель скрыта
 
 ## UX-принципы
 - senior: один экран = одна задача, крупные кнопки, высокий контраст, крупный текст, при необходимости голос

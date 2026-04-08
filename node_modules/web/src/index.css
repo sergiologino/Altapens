@@ -705,6 +705,69 @@ select.text-input {
     var(--color-surface-base);
 }
 
+.shell-main--voice-dock {
+  padding-bottom: 128px;
+}
+
+.senior-voice-dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(var(--space-4), env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  width: min(100%, 480px);
+  padding: 0 var(--space-4);
+  pointer-events: none;
+}
+
+.senior-voice-dock-inner {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.senior-voice-mic {
+  min-height: 72px;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 800;
+  font-size: clamp(1rem, 0.92rem + 0.5vw, 1.2rem);
+  cursor: pointer;
+  border: 1px solid rgba(76, 74, 102, 0.12);
+  background: linear-gradient(135deg, #7c5cff, #5f80ff);
+  color: #ffffff;
+  box-shadow: var(--shadow-soft-sm);
+}
+
+.senior-voice-mic:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.senior-voice-mic.listening {
+  animation: senior-voice-pulse 1.3s ease infinite;
+}
+
+@keyframes senior-voice-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 92, 255, 0.4);
+  }
+  55% {
+    box-shadow: 0 0 0 14px rgba(124, 92, 255, 0);
+  }
+}
+
+.senior-voice-status {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-content-secondary);
+  text-align: center;
+  line-height: var(--line-height-normal);
+  min-height: 2.6em;
+}
+
 .inline-feedback {
   flex-wrap: wrap;
 }
