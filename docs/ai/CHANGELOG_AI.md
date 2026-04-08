@@ -1,5 +1,8 @@
 # AI Changelog
 
+## 2026-04-10
+- Отдельный проект **Mobile_version** (Capacitor 7): `lib/`, `scripts/`, `www/`, Vitest, CI workflow; сборка web из AltaPens через `build:web:mobile` (`--base ./`); скрипт в корневом `package.json` AltaPens
+
 ## 2026-04-09
 - Frontend: голосовой режим senior — Web Speech API (`voice-tts`, `voice-stt`, `voice-intents` + Vitest), панель «Удерживайте и говорите», озвучка при смене экрана, команды: приём/пропуск/отложить лекарство (при API), чек-ин, давление в note, SOS; `AppShell` поддерживает `mainClassName`; в спеке зафиксировано отложенное подключение MCP
 

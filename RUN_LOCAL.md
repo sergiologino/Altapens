@@ -17,6 +17,57 @@
 
 ---
 
+## Десктоп: IntelliJ IDEA + локальный PostgreSQL (кратко)
+
+Ниже — один рабочий сценарий: **PostgreSQL уже установлен локально**, БД **`altacare`** создана (см. раздел **«База данных PostgreSQL»** ниже), порт **5432**.
+
+### Backend в IDEA
+
+1. **File → Open** → каталог **`apps/backend`** (или весь монорепозиторий `AltaPens`).
+2. Дождитесь импорта Gradle.
+3. Откройте класс **`ru.altacare.backend.BackendApplication`**.
+4. **Run → Edit Configurations** → Spring Boot (или Application):
+   - **Main class:** `ru.altacare.backend.BackendApplication`
+   - **Active profiles:** `local`  
+     (профиль `dev` используйте, только если поднимаете Postgres через Docker Compose из проекта — см. раздел **«Backend»** ниже).
+   - **Environment variables** (через `;` в Windows или отдельные поля):
+
+     `DB_URL=jdbc:postgresql://localhost:5432/altacare;DB_USERNAME=postgres;DB_PASSWORD=postgres;JWT_SECRET=local-dev-secret-at-least-32-chars!!`
+
+5. **Run** / **Debug**. Проверка: <http://localhost:8080/actuator/health> → **UP**.
+
+### Frontend (десктопный браузер)
+
+1. В корне **`AltaPens`** выполните `npm install` (один раз).
+2. Файл **`apps/web/.env.local`**:
+
+   ```env
+   VITE_API_BASE_URL=http://localhost:8080
+   ```
+
+3. Терминал в корне репозитория:
+
+   ```powershell
+   npm run dev:web
+   ```
+
+4. Откройте URL из вывода Vite (часто **http://localhost:5173**). CORS настроен под `localhost` / `127.0.0.1`.
+
+### Переменные окружения (десктоп)
+
+| Где задаётся | Переменная | Пример | Назначение |
+|--------------|------------|--------|------------|
+| IDEA / система / `.env` для JVM | `DB_URL` | `jdbc:postgresql://localhost:5432/altacare` | JDBC PostgreSQL |
+| IDEA / система | `DB_USERNAME` | `postgres` | пользователь БД |
+| IDEA / система | `DB_PASSWORD` | `postgres` | пароль БД |
+| IDEA / система | `JWT_SECRET` | строка **не короче 32 символов** | подпись JWT |
+| IDEA / система | `SERVER_PORT` | `8080` | порт HTTP backend (по умолчанию 8080) |
+| **`apps/web/.env.local`** (Vite) | `VITE_API_BASE_URL` | `http://localhost:8080` | базовый URL API для фронта |
+
+Если переменные для БД и JWT не заданы, подставляются значения из `application.yml` (для продакшена **обязательно** задать свой `JWT_SECRET`).
+
+---
+
 ## 0. Весь стек в Docker (UI + API + PostgreSQL)
 
 Одна команда — без отдельных виртуалок для каждого сервиса. Фронт отдаёт **nginx**, запросы к **`/api/*`** проксируются в Spring Boot; в браузере один origin (удобно для cookies/сессий в будущем и без возни с CORS).
@@ -257,5 +308,87 @@ cd E:\1_MyProjects\AltaCare\AltaPens\apps\backend
 
 - **Auth:** `/api/v1/auth/register`, `/login`, `/logout`, `/me`
 - **Care network:** `/api/v1/care/invites`, `/care/invites/{code}`, `/care/invites/{code}/accept`, `/care/seniors`, `/care/caregivers`, `/care/relationships/{id}`
+- **Medications / самочувствие / лента:** `/api/v1/care/medications`, `.../today-doses`, `.../intake`, `/care/checkins`, `/care/timeline`
 
 Подробнее — Swagger UI по адресу выше.
+
+---
+
+## 8. Быстрый прогон для тестирования (API + голос senior)
+
+**Цель:** поднять backend и фронт, войти как подопечный с демо-данными, проверить care API и **голосовой режим** (микрофон + озвучка).
+
+### Предусловия
+
+- Установлены Node.js, JDK 17+, Docker Desktop (удобно для профиля `dev`).
+- Браузер: **Chrome** или **Edge** (лучшая поддержка Web Speech API для русского). Нужен **localhost** или **HTTPS**; для `npm run dev:web` достаточно `http://localhost:…`.
+
+### Шаг 1 — Backend
+
+```powershell
+cd E:\1_MyProjects\AltaCare\AltaPens\apps\backend
+.\gradlew.bat bootRun --args="--spring.profiles.active=dev"
+```
+
+Дождитесь старта и проверьте: <http://localhost:8080/actuator/health> → `UP`.
+
+*(Если порт 5432 занят локальным Postgres — используйте профиль `local`, свой `DB_URL` и заранее поднятую БД `altacare`, см. разделы 1–2.)*
+
+### Шаг 2 — Frontend
+
+В корне репозитория создайте или проверьте **`apps/web/.env.local`**:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+Установка зависимостей (один раз или после обновления):
+
+```powershell
+cd E:\1_MyProjects\AltaCare\AltaPens
+npm install
+npm run dev:web
+```
+
+Откройте в консоли указанный URL (часто **http://localhost:5173**). **Перезапустите** dev-сервер, если только что создали `.env.local`.
+
+### Шаг 3 — Вход подопечного
+
+1. Пройдите **`/start` → вход**, роль **Подопечный** (senior).
+2. Учётные данные демо: **`ivan@altacare.demo`** / **`demo1234`**.
+
+### Шаг 4 — Озвучка и микрофон
+
+1. В меню откройте **«Профиль»** и включите **«Включить озвучку»** (если выключено).
+2. Внизу экрана появится панель **«Удерживайте и говорите»**.
+3. При смене раздела приложение **кратко озвучивает** подсказку по экрану.
+4. При первом нажатии браузер запросит доступ к **микрофону** — разрешите.
+5. **Удерживайте** кнопку, произнесите фразу, **отпустите**. Примеры (с подключённым API):
+   - «я принял …» / название препарата из списка на сегодня;
+   - «мне хорошо» / «нужна помощь» / «плохо»;
+   - «давление 120 на 80»;
+   - «позвони дочери» — переход к экрану SOS.
+6. Если backend не подключён (`VITE_API_BASE_URL` пуст), запись приёма лекарств и чек-инов по голосу **не сохраняются** — приложение озвучит подсказку.
+
+### Шаг 5 — Опекун (по желанию)
+
+Выйдите или второй вкладкой: роль **Опекун**, **`anna@altacare.demo`** / **`demo1234`**. Проверьте подопечного, лекарства, ленту событий после действий подопечного.
+
+### Альтернатива: один origin без CORS
+
+Из корня репозитория:
+
+```powershell
+docker compose up --build
+```
+
+Откройте **http://localhost:3080** — фронт с прокси на API; переменная **`VITE_API_SAME_ORIGIN`** в образе уже учтена. Голос по-прежнему лучше проверять в Chrome/Edge.
+
+### Чеклист неполадок (голос)
+
+| Симптом | Действие |
+|---------|----------|
+| «Голосовой ввод недоступен» | Смените браузер на Chrome или Edge; проверьте HTTPS/localhost. |
+| Нет запроса микрофона | Разрешите сайту доступ к микрофону в настройках браузера. |
+| Речь не распознаётся | Говорите после нажатия кнопки чётко; язык распознавания — русский (`ru-RU`). |
+| Команда «не поняла» | Назовите препарат так же, как в списке на сегодня; для пропуска скажите «пропустил …», затем «да» для подтверждения. |

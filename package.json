@@ -10,6 +10,7 @@
   "scripts": {
     "dev:web": "npm run dev --workspace web",
     "build:web": "npm run build --workspace web",
+    "build:web:mobile": "npm run build --workspace web -- --base ./",
     "lint:web": "npm run lint --workspace web",
     "test:web": "npm run test --workspace web",
     "install:all": "npm install"
