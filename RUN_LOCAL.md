@@ -36,6 +36,8 @@
 
 5. **Run** / **Debug**. Проверка: <http://localhost:8080/actuator/health> → **UP**.
 
+**Если в конфигурации Spring Boot / Application нельзя выбрать `BackendApplication`:** Gradle-проект backend не подключён или не проиндексирован. Сделайте так: **File → Open** → укажите каталог **`AltaPens/apps/backend`** (как корень Gradle) *или* в уже открытом `AltaPens` — **File → New → Module from Existing Sources** → `apps/backend/build.gradle` → импорт Gradle. Дождитесь окончания **Load Gradle Project** и индексации. В конфигурации укажите **Use classpath of module:** `backend.main` (или модуль `backend`). Поле **Main class** можно **ввести вручную**: `ru.altacare.backend.BackendApplication` — IDEA запустит, даже если список «Browse» пустой. Убедитесь, что **Project SDK** и **Gradle JVM** — JDK **17+** (**File → Project Structure → Project**, **Settings → Build, Execution, Deployment → Build Tools → Gradle**).
+
 ### Frontend (десктопный браузер)
 
 1. В корне **`AltaPens`** выполните `npm install` (один раз).

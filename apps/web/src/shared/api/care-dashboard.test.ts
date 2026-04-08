@@ -1,6 +1,10 @@
 import type { SeniorOverview } from '@altapens/shared-types'
 import { describe, expect, it } from 'vitest'
-import { buildCaregiverDashboardFromApi, buildSeniorOverviewFromApi } from '@/shared/api/care-dashboard'
+import {
+  buildCaregiverDashboardFromApi,
+  buildSeniorOverviewFromApi,
+  summarizeMedicationLine,
+} from '@/shared/api/care-dashboard'
 
 describe('care-dashboard', () => {
   const caregiverSession = {
@@ -25,6 +29,60 @@ describe('care-dashboard', () => {
     expect(d.seniors[0].id).toBe('s1')
     expect(d.caregiver.displayName).toBe('Анна')
     expect(d.caregiver.contact).toBe('a@test')
+  })
+
+  it('buildCaregiverDashboardFromApi uses doses and checkins when insights passed', () => {
+    const d = buildCaregiverDashboardFromApi(caregiverSession, [apiSenior], {
+      s1: {
+        doses: [
+          {
+            id: 'd1',
+            title: 'Аспирин',
+            dosageText: '1',
+            plannedTime: '14:00',
+            status: 'upcoming',
+            confirmationRequired: false,
+          },
+        ],
+        checkins: [
+          {
+            id: 'c1',
+            seniorUserId: 's1',
+            state: 'good',
+            note: null,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    })
+    expect(d.seniors[0].medicationProgress).toContain('принято 0')
+    expect(d.seniors[0].currentState).toBe('Хорошо')
+    expect(d.aiSummaries.some((x) => x.includes('самочувствие'))).toBe(true)
+  })
+
+  it('summarizeMedicationLine counts statuses', () => {
+    const r = summarizeMedicationLine([
+      {
+        id: 'a',
+        title: 'A',
+        dosageText: '1',
+        plannedTime: '08:00',
+        status: 'taken',
+        confirmationRequired: false,
+      },
+      {
+        id: 'b',
+        title: 'B',
+        dosageText: '1',
+        plannedTime: '20:00',
+        status: 'missed',
+        confirmationRequired: false,
+      },
+    ])
+    expect(r.taken).toBe(1)
+    expect(r.missed).toBe(1)
+    expect(r.total).toBe(2)
+    expect(r.progress).toContain('пропущено 1')
   })
 
   it('buildSeniorOverviewFromApi uses API doses when provided', () => {

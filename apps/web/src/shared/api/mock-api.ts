@@ -79,7 +79,17 @@ export const useCaregiverDashboardQuery = () => {
         return mockApi.getCaregiverDashboard()
       }
       const seniors = await careApi.listSeniors()
-      return buildCaregiverDashboardFromApi(session, seniors)
+      const entries = await Promise.all(
+        seniors.map(async (s) => {
+          const [doses, checkins] = await Promise.all([
+            careApi.listTodayDoses(s.userId),
+            careApi.listCheckins(s.userId, 20),
+          ])
+          return [s.userId, { doses, checkins }] as const
+        }),
+      )
+      const insights = Object.fromEntries(entries)
+      return buildCaregiverDashboardFromApi(session, seniors, insights)
     },
     enabled: !useHttp || session?.role === 'caregiver',
     staleTime: useHttp ? 60_000 : Infinity,

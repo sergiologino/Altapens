@@ -231,6 +231,7 @@ const invalidateAfterIntake = (queryClient: ReturnType<typeof useQueryClient>) =
 
 const invalidateAfterCheckin = (queryClient: ReturnType<typeof useQueryClient>) => {
   void queryClient.invalidateQueries({ queryKey: ['senior-overview'] })
+  void queryClient.invalidateQueries({ queryKey: ['caregiver-dashboard'] })
   void queryClient.invalidateQueries({ queryKey: ['checkins'] })
   void queryClient.invalidateQueries({ queryKey: ['timeline'] })
 }

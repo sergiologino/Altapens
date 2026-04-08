@@ -1,4 +1,8 @@
-import type { CareUserSummaryDto, MedicationDoseDto } from '@altapens/api-contracts'
+import type {
+  CareUserSummaryDto,
+  MedicationDoseDto,
+  WellbeingCheckinDto,
+} from '@altapens/api-contracts'
 import type { AuthUser, CaregiverDashboard, MedicationDose, SeniorOverview } from '@altapens/shared-types'
 
 import { seniorOverviewMock } from '@/shared/api/mock-care-data'
@@ -8,10 +12,108 @@ const displayNameFromFull = (fullName: string) => {
   return part || fullName
 }
 
-/** Сводка опекуна из сессии + список подопечных с backend. */
+const wellbeingShort = (state: WellbeingCheckinDto['state']): string => {
+  switch (state) {
+    case 'good':
+      return 'хорошо'
+    case 'need_help':
+      return 'нужна помощь'
+    case 'bad':
+      return 'плохо'
+    default:
+      return state
+  }
+}
+
+const isSameCalendarDay = (iso: string, now: Date): boolean => {
+  const d = new Date(iso)
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  )
+}
+
+/** Последняя отметка за календарный день `day` (список обычно от новых к старым). */
+const latestCheckinOnDay = (
+  checkins: WellbeingCheckinDto[],
+  day: Date,
+): WellbeingCheckinDto | undefined =>
+  checkins.find((c) => isSameCalendarDay(c.createdAt, day))
+
+const timeShort = (iso: string) =>
+  new Intl.DateTimeFormat('ru-RU', { timeStyle: 'short' }).format(new Date(iso))
+
+const slotWord = (n: number): string => {
+  const m = n % 100
+  const m10 = n % 10
+  if (m >= 11 && m <= 14) return 'слотов'
+  if (m10 === 1) return 'слот'
+  if (m10 >= 2 && m10 <= 4) return 'слота'
+  return 'слотов'
+}
+
+const comparePlannedTime = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })
+
+export function summarizeMedicationLine(doses: MedicationDoseDto[]): {
+  progress: string
+  nextReminder: string
+  taken: number
+  missed: number
+  total: number
+} {
+  if (doses.length === 0) {
+    return {
+      progress: 'Сегодня нет запланированных приёмов',
+      nextReminder: '—',
+      taken: 0,
+      missed: 0,
+      total: 0,
+    }
+  }
+
+  let taken = 0
+  let missed = 0
+  let upcoming = 0
+  let snoozed = 0
+  for (const d of doses) {
+    if (d.status === 'taken') taken += 1
+    else if (d.status === 'missed') missed += 1
+    else if (d.status === 'upcoming') upcoming += 1
+    else if (d.status === 'snoozed') snoozed += 1
+  }
+
+  const total = doses.length
+  const rest = upcoming + snoozed
+  const progress = `Сегодня ${total} ${slotWord(total)}: принято ${taken}, пропущено ${missed}, ожидается ${rest}`
+
+  const pending = doses.filter((d) => d.status === 'upcoming' || d.status === 'snoozed')
+  pending.sort((x, y) => comparePlannedTime(x.plannedTime, y.plannedTime))
+
+  let nextReminder: string
+  if (pending.length > 0) {
+    const p = pending[0]
+    const tag = p.status === 'snoozed' ? 'отложено' : 'следующий'
+    nextReminder = `${tag}: ${p.title} в ${p.plannedTime}`
+  } else if (taken === total) {
+    nextReminder = 'Все запланированные приёмы на сегодня отмечены'
+  } else {
+    nextReminder = 'Следующих по расписанию нет'
+  }
+
+  return { progress, nextReminder, taken, missed, total }
+}
+
+export type CaregiverPerSeniorInsights = {
+  doses: MedicationDoseDto[]
+  checkins: WellbeingCheckinDto[]
+}
+
+/** Сводка опекуна из сессии + список подопечных с backend. При `insights` — строки из реальных доз и чек-инов. */
 export function buildCaregiverDashboardFromApi(
   session: AuthUser,
   seniors: CareUserSummaryDto[],
+  insights?: Record<string, CaregiverPerSeniorInsights>,
 ): CaregiverDashboard {
   const caregiver = {
     id: session.id,
@@ -20,15 +122,57 @@ export function buildCaregiverDashboardFromApi(
     contact: session.email,
   }
 
-  const seniorRows = seniors.map((s) => ({
-    id: s.userId,
-    fullName: s.fullName,
-    age: 0,
-    currentState: s.status === 'active' ? 'На связи' : '—',
-    attentionLevel: 'calm' as const,
-    medicationProgress: 'Расписание лекарств — в следующих версиях',
-    nextReminder: '—',
-  }))
+  const now = new Date()
+
+  const seniorRows = seniors.map((s) => {
+    const pack = insights?.[s.userId]
+    const doses = pack?.doses ?? []
+    const checkins = pack?.checkins ?? []
+    const lastToday = latestCheckinOnDay(checkins, now)
+
+    const { progress, nextReminder, missed } = summarizeMedicationLine(doses)
+
+    let attentionLevel: 'calm' | 'watch' | 'urgent' = 'calm'
+    if (lastToday?.state === 'bad') attentionLevel = 'urgent'
+    else if (lastToday?.state === 'need_help' || missed > 0) attentionLevel = 'watch'
+
+    let currentState: string
+    if (lastToday) {
+      currentState =
+        lastToday.state === 'good'
+          ? 'Хорошо'
+          : lastToday.state === 'need_help'
+            ? 'Нужна помощь'
+            : 'Плохо'
+    } else {
+      currentState = s.status === 'active' ? 'На связи' : '—'
+    }
+
+    return {
+      id: s.userId,
+      fullName: s.fullName,
+      age: 0,
+      currentState,
+      attentionLevel,
+      medicationProgress: insights ? progress : 'Расписание на сегодня — в карточке подопечного',
+      nextReminder: insights ? nextReminder : '—',
+    }
+  })
+
+  const n = seniorRows.length
+
+  let takenAll = 0
+  let missedAll = 0
+  let totalAll = 0
+  if (insights) {
+    for (const s of seniors) {
+      const d = insights[s.userId]?.doses ?? []
+      const sum = summarizeMedicationLine(d)
+      takenAll += sum.taken
+      missedAll += sum.missed
+      totalAll += sum.total
+    }
+  }
 
   const attentionItems =
     seniorRows.length === 0
@@ -42,32 +186,106 @@ export function buildCaregiverDashboardFromApi(
             timeLabel: 'Сейчас',
           },
         ]
-      : [
-          {
+      : (() => {
+          const items: CaregiverDashboard['attentionItems'] = []
+          const badName = seniors.find((s) => latestCheckinOnDay(insights?.[s.userId]?.checkins ?? [], now)?.state === 'bad')
+          if (badName && insights) {
+            items.push({
+              id: 'wellbeing-bad',
+              title: 'Отметка «плохо»',
+              description: `По самочувствию у ${displayNameFromFull(badName.fullName)} последняя отметка тревожная — лучше связаться.`,
+              level: 'urgent',
+              timeLabel: 'Сегодня',
+            })
+          }
+          if (missedAll > 0 && insights) {
+            items.push({
+              id: 'missed-doses',
+              title: 'Пропущенные приёмы',
+              description:
+                missedAll === 1
+                  ? 'За сегодня есть один пропуск по лекарствам.'
+                  : `За сегодня пропущено приёмов: ${missedAll}.`,
+              level: 'watch',
+              timeLabel: 'Сегодня',
+            })
+          }
+          items.push({
             id: 'care-sync',
-            title: 'Данные с сервера',
-            description: 'Список подопечных загружен из вашей сети заботы.',
-            level: 'calm' as const,
+            title: insights ? 'Данные с сервера' : 'Сеть заботы',
+            description: insights
+              ? 'Расписание и самочувствие подгружены из API.'
+              : 'Список подопечных из вашей сети заботы.',
+            level: 'calm',
             timeLabel: 'Сегодня',
-          },
-        ]
+          })
+          return items
+        })()
 
-  const n = seniorRows.length
+  const aiSummaries: string[] = []
+  aiSummaries.push(
+    n > 0
+      ? `В сети заботы сейчас ${n} ${n === 1 ? 'подопечный' : 'подопечных'}.`
+      : 'Когда появится первый подопечный, здесь будут короткие подсказки по дню.',
+  )
+
+  if (insights && n > 0) {
+    const wellbeingLines: string[] = []
+    for (const s of seniors) {
+      const last = latestCheckinOnDay(insights[s.userId]?.checkins ?? [], now)
+      const short = displayNameFromFull(s.fullName)
+      if (last) {
+        wellbeingLines.push(
+          `${short}: самочувствие «${wellbeingShort(last.state)}» (${timeShort(last.createdAt)}).`,
+        )
+      } else {
+        wellbeingLines.push(`У ${short} сегодня ещё нет отметки о самочувствии.`)
+      }
+    }
+    aiSummaries.push(wellbeingLines.join(' '))
+
+    if (missedAll > 0) {
+      aiSummaries.push(
+        missedAll === 1
+          ? 'За сегодня есть пропуск по лекарствам — при случае мягко напомните о приёме.'
+          : `За сегодня пропущено приёмов: ${missedAll}. Сверьтесь с расписанием в карточке подопечного.`,
+      )
+    } else if (totalAll > 0) {
+      aiSummaries.push('Пропусков лекарств за сегодня нет — хороший знак.')
+    } else {
+      aiSummaries.push('На сегодня не запланировано приёмов — проверьте курсы в разделе «Лекарства», если ожидались.')
+    }
+  } else {
+    aiSummaries.push(
+      'Короткие напоминания в одно и то же время снижают пропуски лучше, чем длинные списки.',
+    )
+  }
+
+  const todayMetrics: CaregiverDashboard['todayMetrics'] = [
+    { label: 'Подопечных', value: String(n), tone: 'accent' },
+    { label: 'Активных связей', value: String(seniors.filter((s) => s.status === 'active').length), tone: 'warm' },
+  ]
+
+  if (insights) {
+    const medValue =
+      totalAll > 0
+        ? `${takenAll} / ${totalAll}${missedAll > 0 ? ` · проп. ${missedAll}` : ''}`
+        : '—'
+    todayMetrics.push({
+      label: 'Приёмы сегодня',
+      value: medValue,
+      tone: missedAll > 0 ? 'warm' : 'neutral',
+    })
+  } else {
+    todayMetrics.push({ label: 'Приёмы сегодня', value: '—', tone: 'neutral' })
+  }
+
   return {
     caregiver,
     seniors: seniorRows,
     attentionItems,
-    aiSummaries: [
-      n > 0
-        ? `В сети заботы сейчас ${n} ${n === 1 ? 'подопечный' : 'подопечных'}.`
-        : 'Когда появится первый подопечный, здесь будут короткие подсказки по дню.',
-      'Отметки самочувствия и история пропусков подключим отдельным API.',
-    ],
-    todayMetrics: [
-      { label: 'Подопечных', value: String(n), tone: 'accent' },
-      { label: 'Активных связей', value: String(seniors.filter((s) => s.status === 'active').length), tone: 'warm' },
-      { label: 'Лекарства (демо)', value: '—', tone: 'neutral' },
-    ],
+    aiSummaries,
+    todayMetrics,
   }
 }
 
