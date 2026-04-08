@@ -159,6 +159,8 @@ export const timelineItemSchema = z.object({
   description: z.string(),
   level: z.enum(['calm', 'watch', 'urgent']),
   timeLabel: z.string(),
+  /** ISO-8601 instant для сортировки на клиенте */
+  occurredAt: z.string().optional(),
 })
 
 export const timelineItemListSchema = z.array(timelineItemSchema)

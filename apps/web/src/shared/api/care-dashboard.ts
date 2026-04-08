@@ -55,7 +55,26 @@ const slotWord = (n: number): string => {
 
 const comparePlannedTime = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })
 
-export function summarizeMedicationLine(doses: MedicationDoseDto[]): {
+/** Если бэкенд ещё отдаёт upcoming, а время слота уже прошло — считаем пропуском (как на сервере). */
+function effectiveDoseStatus(d: MedicationDoseDto, now: Date): MedicationDoseDto['status'] {
+  if (d.status !== 'upcoming') {
+    return d.status
+  }
+  const m = d.plannedTime.trim().match(/^(\d{1,2}):(\d{2})$/)
+  if (!m) {
+    return d.status
+  }
+  const hh = Number(m[1])
+  const mm = Number(m[2])
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) {
+    return d.status
+  }
+  const slot = new Date(now)
+  slot.setHours(hh, mm, 0, 0)
+  return now.getTime() > slot.getTime() ? 'missed' : 'upcoming'
+}
+
+export function summarizeMedicationLine(doses: MedicationDoseDto[], now: Date = new Date()): {
   progress: string
   nextReminder: string
   taken: number
@@ -77,28 +96,37 @@ export function summarizeMedicationLine(doses: MedicationDoseDto[]): {
   let upcoming = 0
   let snoozed = 0
   for (const d of doses) {
-    if (d.status === 'taken') taken += 1
-    else if (d.status === 'missed') missed += 1
-    else if (d.status === 'upcoming') upcoming += 1
-    else if (d.status === 'snoozed') snoozed += 1
+    const st = effectiveDoseStatus(d, now)
+    if (st === 'taken') taken += 1
+    else if (st === 'missed') missed += 1
+    else if (st === 'upcoming') upcoming += 1
+    else if (st === 'snoozed') snoozed += 1
   }
 
   const total = doses.length
   const rest = upcoming + snoozed
   const progress = `Сегодня ${total} ${slotWord(total)}: принято ${taken}, пропущено ${missed}, ожидается ${rest}`
 
-  const pending = doses.filter((d) => d.status === 'upcoming' || d.status === 'snoozed')
+  const pending = doses.filter((d) => {
+    const st = effectiveDoseStatus(d, now)
+    return st === 'upcoming' || st === 'snoozed'
+  })
   pending.sort((x, y) => comparePlannedTime(x.plannedTime, y.plannedTime))
 
   let nextReminder: string
   if (pending.length > 0) {
     const p = pending[0]
-    const tag = p.status === 'snoozed' ? 'отложено' : 'следующий'
+    const st = effectiveDoseStatus(p, now)
+    const tag = st === 'snoozed' ? 'отложено' : 'следующий'
     nextReminder = `${tag}: ${p.title} в ${p.plannedTime}`
-  } else if (taken === total) {
+  } else if (total > 0 && taken === total) {
     nextReminder = 'Все запланированные приёмы на сегодня отмечены'
+  } else if (total > 0 && missed === total) {
+    nextReminder = 'Ни один приём за сегодня не подтверждён'
+  } else if (total > 0) {
+    nextReminder = 'Есть приёмы без подтверждения — см. расписание'
   } else {
-    nextReminder = 'Следующих по расписанию нет'
+    nextReminder = '—'
   }
 
   return { progress, nextReminder, taken, missed, total }
@@ -130,7 +158,7 @@ export function buildCaregiverDashboardFromApi(
     const checkins = pack?.checkins ?? []
     const lastToday = latestCheckinOnDay(checkins, now)
 
-    const { progress, nextReminder, missed } = summarizeMedicationLine(doses)
+    const { progress, nextReminder, missed } = summarizeMedicationLine(doses, now)
 
     let attentionLevel: 'calm' | 'watch' | 'urgent' = 'calm'
     if (lastToday?.state === 'bad') attentionLevel = 'urgent'
@@ -167,7 +195,7 @@ export function buildCaregiverDashboardFromApi(
   if (insights) {
     for (const s of seniors) {
       const d = insights[s.userId]?.doses ?? []
-      const sum = summarizeMedicationLine(d)
+      const sum = summarizeMedicationLine(d, now)
       takenAll += sum.taken
       missedAll += sum.missed
       totalAll += sum.total
@@ -239,7 +267,7 @@ export function buildCaregiverDashboardFromApi(
           `${short}: самочувствие «${wellbeingShort(last.state)}» (${timeShort(last.createdAt)}).`,
         )
       } else {
-        wellbeingLines.push(`У ${short} сегодня ещё нет отметки о самочувствии.`)
+        wellbeingLines.push(`${short}: сегодня ещё нет отметки о самочувствии.`)
       }
     }
     aiSummaries.push(wellbeingLines.join(' '))

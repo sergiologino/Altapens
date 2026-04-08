@@ -22,6 +22,7 @@ import {
   SectionHeader,
   ShellNav,
 } from '@/shared/ui/primitives'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 const seniorLinks = [
   { to: '/senior', label: 'Главная' },
@@ -57,7 +58,7 @@ export const SeniorLayout = () => {
           nav={
             <ShellNav
               title="Мой день"
-              subtitle="Крупные кнопки и простые слова — чтобы было спокойно пользоваться каждый день."
+              subtitle="Разделы приложения"
               links={seniorLinks}
               footer={
                 session ? (
@@ -92,7 +93,7 @@ export const SeniorHomePage = () => {
     <div className="page-stack">
       <SectionCard tone="accent" className="hero-card senior-hero">
         <span className="eyebrow">Здравствуйте, {data.senior.fullName}</span>
-        <h2 className="hero-card-title">Сегодня всё под рукой: самочувствие, лекарства и помощь.</h2>
+        <h2 className="hero-card-title">Сегодня: самочувствие, лекарства, помощь</h2>
         <p className="hero-card-text">{data.todaySummary}</p>
         <div className="button-stack button-stack-mobile">
           <ActionButton className="senior-cta">Мне хорошо</ActionButton>
@@ -111,7 +112,7 @@ export const SeniorHomePage = () => {
           <SectionHeader
             eyebrow="Сегодня"
             title="Ближайшие дела"
-            description="Минимум текста, только важное на сегодня."
+            description="Слоты приёма на сегодня."
           />
           <div className="list-stack">
             {data.medications.map((medication) => (
@@ -133,7 +134,7 @@ export const SeniorHomePage = () => {
         <SectionHeader
           eyebrow="Связь с близкими"
           title="Близкие на связи"
-          description="Они видят, что с вами всё в порядке или если нужна помощь — без давления и без слежки."
+          description="Сообщения от приложения и близких."
         />
         <div className="card-grid">
           {data.alerts.map((alert) => (
@@ -180,7 +181,7 @@ export const SeniorTodayPage = () => {
         <SectionHeader
           eyebrow="Лекарства"
           title="Напоминания на сегодня"
-          description="Когда пора принять лекарство, приложение напомнит. Подтверждение можно оставить или убрать — как вам удобнее."
+          description="Подтверждение приёма — по желанию, в настройках курса."
         />
         <div className="medication-card-list">
           {data.medications.map((dose) => (
@@ -252,7 +253,7 @@ export const SeniorHistoryPage = () => {
           <SectionHeader
             eyebrow="Самочувствие"
             title="Как вы себя чувствовали"
-            description="Простые отметки по дням — чтобы вы и близкие помнили, как проходило время."
+            description="Отметки по дням."
           />
           <div className="list-stack">
             {checkins.data?.map((item) => (
@@ -276,7 +277,7 @@ export const SeniorHistoryPage = () => {
           <SectionHeader
             eyebrow="Приёмы"
             title="История лекарств"
-            description="Приняли или пропустили — всё видно простым списком, без таблиц и жаргона."
+            description="Статусы приёмов за период."
           />
           <div className="list-stack">
             {history.data?.map((dose) => (
@@ -313,9 +314,13 @@ export const SeniorProfilePage = () => {
         <SectionHeader
           eyebrow="Удобство"
           title="Настройки экрана"
-          description="Крупный шрифт, контраст и при желании озвучка — всё простыми переключателями."
+          description="Тема, шрифт, контраст, озвучка."
         />
         <div className="settings-grid">
+          <div className="mini-card">
+            <h3>Тема</h3>
+            <ThemeToggle />
+          </div>
           <div className="mini-card">
             <h3>Размер текста</h3>
             <div className="button-row wrap-row">
@@ -369,7 +374,7 @@ export const SeniorSosPage = () => (
       <SectionHeader
         eyebrow="Экстренная помощь"
         title="Если случилось беда"
-        description="После нажатия близкие получают срочное уведомление. Геолокацию можно подключить отдельно, если вы согласны."
+        description="Сигнал близким. Геолокация — отдельно, по согласию."
       />
       <div className="button-stack button-stack-mobile">
         <ActionButton tone="danger" className="senior-cta senior-sos-button">
@@ -389,7 +394,7 @@ export const SeniorAntiScamPage = () => (
       <SectionHeader
         eyebrow="Защита от обмана"
         title="Если звонок кажется подозрительным"
-        description="Крупные кнопки — чтобы быстро оборвать разговор и предупредить близких."
+        description="Быстрые действия при подозрительном звонке."
       />
       <div className="button-stack button-stack-mobile">
         <ActionButton tone="danger" className="senior-cta">

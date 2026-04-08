@@ -124,11 +124,17 @@ export const useTimelineQuery = () => {
         return mockApi.getTimeline()
       }
       const seniors = await careApi.listSeniors()
-      const id = seniors[0]?.userId
-      if (!id) {
+      if (seniors.length === 0) {
         return []
       }
-      return careApi.listTimeline(id)
+      const lists = await Promise.all(seniors.map((s) => careApi.listTimeline(s.userId)))
+      const merged = lists.flat()
+      merged.sort((a, b) => {
+        const ta = a.occurredAt ? Date.parse(a.occurredAt) : 0
+        const tb = b.occurredAt ? Date.parse(b.occurredAt) : 0
+        return tb - ta
+      })
+      return merged
     },
     enabled: session?.role === 'caregiver',
     staleTime: useHttp ? 60_000 : Infinity,

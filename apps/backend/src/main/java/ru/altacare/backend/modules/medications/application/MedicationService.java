@@ -2,6 +2,7 @@ package ru.altacare.backend.modules.medications.application;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.DateTimeException;
@@ -62,6 +63,7 @@ public class MedicationService {
                                 MedicationIntakeEntity::getStatus,
                                 (a, b) -> b));
 
+        ZonedDateTime nowInSeniorZone = ZonedDateTime.now(zoneId(senior.getTimezone()));
         List<MedicationDoseResponse> doses = new ArrayList<>();
         for (MedicationEntity m : medicationRepository.findBySeniorProfileOrderByCreatedAtDesc(senior)) {
             String[] parts = m.getExactTimes().split(",");
@@ -71,13 +73,16 @@ public class MedicationService {
                     continue;
                 }
                 String key = m.getId() + ":" + i;
-                MedicationIntakeStatus status = statusByKey.getOrDefault(key, MedicationIntakeStatus.upcoming);
+                MedicationIntakeStatus stored = statusByKey.getOrDefault(key, MedicationIntakeStatus.upcoming);
+                LocalTime slotTime = MedicationScheduleHelper.parsePlannedTime(planned);
+                MedicationIntakeStatus effective =
+                        MedicationScheduleHelper.effectiveStatus(stored, today, slotTime, nowInSeniorZone);
                 doses.add(new MedicationDoseResponse(
                         key,
                         m.getTitle(),
                         m.getDosageText(),
                         planned,
-                        status.name(),
+                        effective.name(),
                         m.isConfirmationRequired()));
             }
         }
@@ -154,9 +159,17 @@ public class MedicationService {
 
     private static LocalDate todayInSeniorZone(SeniorProfileEntity senior) {
         try {
-            return ZonedDateTime.now(ZoneId.of(senior.getTimezone())).toLocalDate();
+            return ZonedDateTime.now(zoneId(senior.getTimezone())).toLocalDate();
         } catch (DateTimeException e) {
             return LocalDate.now(ZoneOffset.UTC);
+        }
+    }
+
+    private static ZoneId zoneId(String timezone) {
+        try {
+            return ZoneId.of(timezone);
+        } catch (DateTimeException e) {
+            return ZoneOffset.UTC;
         }
     }
 

@@ -2,6 +2,7 @@ package ru.altacare.backend.modules.care.application;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -18,8 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.altacare.backend.modules.care.api.dto.TimelineItemResponse;
 import ru.altacare.backend.modules.checkins.domain.entity.WellbeingCheckinEntity;
 import ru.altacare.backend.modules.checkins.infrastructure.persistence.WellbeingCheckinRepository;
+import ru.altacare.backend.modules.medications.application.MedicationScheduleHelper;
+import ru.altacare.backend.modules.medications.domain.entity.MedicationEntity;
 import ru.altacare.backend.modules.medications.domain.entity.MedicationIntakeEntity;
+import ru.altacare.backend.modules.medications.domain.enums.MedicationIntakeStatus;
 import ru.altacare.backend.modules.medications.infrastructure.persistence.MedicationIntakeRepository;
+import ru.altacare.backend.modules.medications.infrastructure.persistence.MedicationRepository;
 import ru.altacare.backend.modules.profiles.domain.entity.SeniorProfileEntity;
 
 @Service
@@ -29,11 +35,16 @@ public class TimelineService {
     private final CareSeniorResolver careSeniorResolver;
     private final WellbeingCheckinRepository wellbeingCheckinRepository;
     private final MedicationIntakeRepository medicationIntakeRepository;
+    private final MedicationRepository medicationRepository;
 
     @Transactional(readOnly = true)
     public List<TimelineItemResponse> list(UUID seniorUserIdParam, int limit) {
         SeniorProfileEntity senior = careSeniorResolver.resolve(seniorUserIdParam);
         ZoneId zone = zoneId(senior.getTimezone());
+        LocalDate today = ZonedDateTime.now(zone).toLocalDate();
+        Instant dayStart = today.atStartOfDay(zone).toInstant();
+        Instant dayEnd = today.plusDays(1).atStartOfDay(zone).toInstant();
+
         int capped = Math.min(Math.max(limit, 1), 100);
         List<WellbeingCheckinEntity> checkins =
                 wellbeingCheckinRepository.findBySeniorProfileOrderByCreatedAtDesc(
@@ -50,6 +61,54 @@ public class TimelineService {
         for (MedicationIntakeEntity i : intakes) {
             merged.add(new Timed(i.getRecordedAt(), mapIntake(i, zone)));
         }
+
+        boolean hasCheckinToday = wellbeingCheckinRepository.existsBySeniorProfileAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                senior, dayStart, dayEnd);
+        if (!hasCheckinToday) {
+            ZonedDateTime anchor = ZonedDateTime.now(zone).withHour(12).withMinute(0).withSecond(0).withNano(0);
+            Instant at = anchor.toInstant();
+            merged.add(new Timed(
+                    at,
+                    new TimelineItemResponse(
+                            "wc-missing-" + today,
+                            "Самочувствие",
+                            "За сегодня нет отметки о самочувствии.",
+                            "watch",
+                            "Сегодня",
+                            at)));
+        }
+
+        ZonedDateTime nowZ = ZonedDateTime.now(zone);
+        for (MedicationEntity m : medicationRepository.findBySeniorProfileOrderByCreatedAtDesc(senior)) {
+            String[] parts = m.getExactTimes().split(",");
+            for (int slotIndex = 0; slotIndex < parts.length; slotIndex++) {
+                String planned = parts[slotIndex].trim();
+                if (planned.isEmpty()) {
+                    continue;
+                }
+                LocalTime slotTime = MedicationScheduleHelper.parsePlannedTime(planned);
+                var intakeOpt = medicationIntakeRepository.findByMedication_IdAndOccurrenceDateAndSlotIndex(
+                        m.getId(), today, slotIndex);
+                MedicationIntakeStatus stored =
+                        intakeOpt.map(MedicationIntakeEntity::getStatus).orElse(MedicationIntakeStatus.upcoming);
+                MedicationIntakeStatus effective =
+                        MedicationScheduleHelper.effectiveStatus(stored, today, slotTime, nowZ);
+                if (effective == MedicationIntakeStatus.missed && intakeOpt.isEmpty()) {
+                    ZonedDateTime slotStart = today.atTime(slotTime).atZone(zone);
+                    Instant at = slotStart.toInstant();
+                    merged.add(new Timed(
+                            at,
+                            new TimelineItemResponse(
+                                    "implicit-mi-" + m.getId() + "-" + slotIndex + "-" + today,
+                                    "Лекарство: " + m.getTitle(),
+                                    "Не подтверждён приём по расписанию (" + planned + ").",
+                                    "watch",
+                                    formatTimeLabel(at, zone),
+                                    at)));
+                }
+            }
+        }
+
         merged.sort(Comparator.comparing(Timed::at).reversed());
         return merged.stream().limit(capped).map(Timed::item).toList();
     }
@@ -75,7 +134,8 @@ public class TimelineService {
                 "Отметка о самочувствии",
                 desc.trim(),
                 level,
-                formatTimeLabel(c.getCreatedAt(), zone));
+                formatTimeLabel(c.getCreatedAt(), zone),
+                c.getCreatedAt());
     }
 
     private static TimelineItemResponse mapIntake(MedicationIntakeEntity i, ZoneId zone) {
@@ -97,7 +157,8 @@ public class TimelineService {
                 "Лекарство: " + med.getTitle(),
                 desc,
                 level,
-                formatTimeLabel(i.getRecordedAt(), zone));
+                formatTimeLabel(i.getRecordedAt(), zone),
+                i.getRecordedAt());
     }
 
     private static ZoneId zoneId(String timezone) {

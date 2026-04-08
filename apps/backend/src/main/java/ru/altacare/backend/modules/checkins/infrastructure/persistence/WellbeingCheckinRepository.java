@@ -1,5 +1,6 @@
 package ru.altacare.backend.modules.checkins.infrastructure.persistence;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -11,4 +12,7 @@ public interface WellbeingCheckinRepository extends JpaRepository<WellbeingCheck
 
     List<WellbeingCheckinEntity> findBySeniorProfileOrderByCreatedAtDesc(
             SeniorProfileEntity senior, Pageable pageable);
+
+    boolean existsBySeniorProfileAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            SeniorProfileEntity senior, Instant startInclusive, Instant endExclusive);
 }

@@ -72,6 +72,8 @@ export interface AlertItem {
   description: string
   level: AttentionLevel
   timeLabel: string
+  /** ISO-8601, для сортировки ленты (с сервера) */
+  occurredAt?: string
 }
 
 export interface AssistantMessage {
