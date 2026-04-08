@@ -1,8 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import type { MedicationFormValues } from '@altapens/shared-types'
+import { useAuthStore } from '@/app/store/auth-store'
+import { useBackendApi } from '@/shared/api/api-base'
+import { useCreateMedicationMutation } from '@/shared/api/care-client'
 import { ActionButton, SectionCard, SectionHeader } from '@/shared/ui/primitives'
 
 const medicationSchema = z.object({
@@ -27,6 +31,13 @@ const defaultValues: MedicationFormValues = {
 
 export const MedicationForm = () => {
   const [savedMessage, setSavedMessage] = useState('')
+  const [formError, setFormError] = useState('')
+  const [searchParams] = useSearchParams()
+  const seniorUserIdFromUrl = searchParams.get('seniorUserId')
+  const session = useAuthStore((s) => s.session)
+  const useHttp = useBackendApi
+  const createMutation = useCreateMedicationMutation()
+
   const {
     register,
     handleSubmit,
@@ -36,6 +47,9 @@ export const MedicationForm = () => {
     defaultValues,
   })
 
+  const caregiverNeedsSenior =
+    useHttp && session?.role === 'caregiver' && !seniorUserIdFromUrl
+
   return (
     <SectionCard>
       <SectionHeader
@@ -43,12 +57,44 @@ export const MedicationForm = () => {
         title="Настроить напоминание"
         description="Название, время приёма, нужно ли подтверждение от подопечного и сообщать ли вам о пропусках."
       />
+      {caregiverNeedsSenior ? (
+        <div className="form-feedback" role="alert">
+          Откройте эту страницу из карточки подопечного или добавьте к ссылке параметр{' '}
+          <code>?seniorUserId=…</code>, чтобы система знала, для кого курс.
+        </div>
+      ) : null}
       <form
         className="form-grid"
         onSubmit={handleSubmit(async (values) => {
+          setFormError('')
+          if (caregiverNeedsSenior) {
+            setFormError('Сначала выберите подопечного (ссылка с кодом из списка).')
+            return
+          }
+          if (useHttp) {
+            try {
+              await createMutation.mutateAsync({
+                seniorUserId:
+                  session?.role === 'caregiver' ? seniorUserIdFromUrl ?? undefined : undefined,
+                title: values.title,
+                dosageText: values.dosageText,
+                instructions: values.instructions,
+                exactTimes: values.exactTimes,
+                daysOfWeek: values.daysOfWeek,
+                confirmationRequired: values.confirmationRequired,
+                notifyOnMissed: values.notifyOnMissed,
+              })
+              setSavedMessage(
+                `Курс «${values.title}» сохранён на сервере. Напоминания: ${values.exactTimes}.`,
+              )
+            } catch (e) {
+              setFormError(e instanceof Error ? e.message : 'Не удалось сохранить')
+            }
+            return
+          }
           await new Promise((resolve) => setTimeout(resolve, 250))
           setSavedMessage(
-            `Курс "${values.title}" сохранён. Напоминания: ${values.exactTimes}. Подтверждение ${
+            `Курс "${values.title}" сохранён локально (демо). Напоминания: ${values.exactTimes}. Подтверждение ${
               values.confirmationRequired ? 'включено' : 'отключено'
             }.`,
           )
@@ -96,11 +142,18 @@ export const MedicationForm = () => {
           <span>Уведомлять родственника о систематических пропусках</span>
         </label>
         <div className="button-row field-span-2">
-          <ActionButton type="submit">{isSubmitting ? 'Сохраняем...' : 'Сохранить курс'}</ActionButton>
+          <ActionButton type="submit" disabled={Boolean(caregiverNeedsSenior)}>
+            {isSubmitting || createMutation.isPending ? 'Сохраняем...' : 'Сохранить курс'}
+          </ActionButton>
           <ActionButton type="button" tone="secondary">
             Выключить подтверждение
           </ActionButton>
         </div>
+        {formError ? (
+          <div className="field-error field-span-2" role="alert">
+            {formError}
+          </div>
+        ) : null}
         {savedMessage ? (
           <div className="inline-feedback form-feedback" aria-live="polite">
             {savedMessage}

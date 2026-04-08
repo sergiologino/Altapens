@@ -1,6 +1,10 @@
 spring:
   application:
     name: altacare-backend
+  docker:
+    compose:
+      # Включается только в профиле `dev` (см. application-dev.yml), чтобы `local` и тесты не трогали Docker.
+      enabled: false
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/altacare}
     username: ${DB_USERNAME:postgres}

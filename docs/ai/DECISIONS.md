@@ -47,3 +47,27 @@
 - Контекст: уже реализованный фронт зависит в первую очередь от login/register/me и invite/care-linking flow
 - Решение: первой backend-реализацией закрыть `auth`, `users`, `profiles`, `care_network`, а остальные домены отложить на следующие этапы
 - Последствия: frontend local auth adapter можно постепенно заменять на реальные `/api/v1/auth/*` и `/api/v1/care/*` endpoints без переделки senior/caregiver shell
+
+## DEC-011: Курсы лекарств в БД и API под префиксом `/api/v1/care/medications`
+- Статус: Accepted
+- Контекст: нужен первый «реальный» домен после care_network; UI уже оперирует слотами приёма и формой курса
+- Решение: таблица `medications` (FK на `senior_profiles`), текстовые поля расписания (`exact_times`, `days_of_week`) для простоты MVP; выдача «сегодняшних» слотов через разбор `exact_times`; доступ опекуна только при активной связи с подопечным (`seniorUserId` в query/body)
+- Последствия: фиксация факта приёма вынесена в `medication_intakes` (см. DEC-012)
+
+## DEC-012: Чек-ины, приёмы лекарств и лента — отдельные таблицы и общий доступ через `CareSeniorResolver`
+- Статус: Accepted
+- Контекст: UI уже показывает чек-ины и ленту как mock; нужно хранить факты без перегруза `medications`
+- Решение: таблицы `wellbeing_checkins` (FK на `senior_profiles`, enum-состояние, `note`, `created_at`) и `medication_intakes` (FK на `medications`, дата в часовом поясе подопечного, индекс слота, статус enum, кто зафиксировал); единый `CareSeniorResolver` для правил senior/caregiver; объединённая лента строится в сервисе из чек-инов и intakes, сортировка по времени
+- Последствия: лента опекуна на экране «События» при HTTP пока привязана к первому подопечному из `GET /care/seniors`; полноценный multi-senior feed — отдельная задача
+
+## DEC-010: Care lists на фронте через отдельный HTTP-слой и маппинг в UI-модель
+- Статус: Accepted
+- Контекст: backend уже отдаёт `GET /care/seniors`, `GET /care/caregivers`, `GET /care/invites`, а UI ожидает богатые структуры (`CaregiverDashboard`, `SeniorOverview`) с полями, которых в API пока нет
+- Решение: `apps/web/src/shared/api/care-client.ts` (fetch + zod из `api-contracts`), чистые функции в `care-dashboard.ts`, подстановка демо-фрагментов из `mock-care-data.ts` для отсутствующих доменов; переключение по тем же `VITE_*`, что и auth
+- Последствия: при появлении medication/check-in API маппинг и контракты расширяются без смены маршрутов и оболочек senior/caregiver
+
+## DEC-009: Локальный PostgreSQL для разработки через профиль `dev`
+- Статус: Accepted
+- Контекст: разработчику нужен предсказуемый запуск backend без ручного создания БД и без коммита тяжёлого Gradle; корневой `docker compose` уже есть, но не покрывает сценарий «только JVM + Gradle из IDE»
+- Решение: зависимость `spring-boot-docker-compose` в `developmentOnly`, compose-файл `apps/backend/src/main/resources/compose-dev-postgres.yml` (classpath, чтобы IDE/`bootRun` не зависели от рабочей директории), профиль Spring `dev` задаёт `spring.docker.compose.file` и `spring.docker.compose.enabled=true`, включает `spring.profiles.include=local`; в базовом `application.yml` интеграция Docker Compose по умолчанию **выключена**, чтобы профиль `local`, прод-сборка и тесты не запускали контейнеры
+- Последствия: `bootRun`/IDE с `--spring.profiles.active=dev` поднимают Postgres при наличии Docker; без Docker по-прежнему используют `local` + свой Postgres или корневой `docker compose up -d postgres`

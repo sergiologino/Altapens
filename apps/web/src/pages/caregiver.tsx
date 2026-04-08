@@ -1,11 +1,20 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useParams } from 'react-router-dom'
 import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
 import { useAuthStore } from '@/app/store/auth-store'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
 import { MedicationForm } from '@/features/medication-manage/MedicationForm'
 import { useCreateInviteMutation } from '@/shared/api/auth-client'
-import { useCaregiverDashboardQuery, useSeniorOverviewQuery, useTimelineQuery } from '@/shared/api/mock-api'
+import { useBackendApi } from '@/shared/api/api-base'
+import { careApi } from '@/shared/api/care-client'
+import {
+  mapWellbeingCheckinToEntry,
+  useCareInvitesRemoteQuery,
+  useCaregiverDashboardQuery,
+  useTimelineQuery,
+} from '@/shared/api/mock-api'
+import { seniorOverviewMock } from '@/shared/api/mock-care-data'
 import {
   ActionButton,
   ActionLink,
@@ -103,7 +112,12 @@ export const CaregiverDashboardPage = () => {
                   <p>{senior.medicationProgress}</p>
                   <small>{senior.nextReminder}</small>
                 </div>
-                <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
+                <div className="button-row wrap-row" style={{ justifyContent: 'flex-end' }}>
+                  <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
+                  <ActionLink to={`/caregiver/seniors/${senior.id}`} tone="ghost">
+                    Открыть
+                  </ActionLink>
+                </div>
               </article>
             ))}
           </div>
@@ -143,18 +157,29 @@ export const CaregiverSeniorsPage = () => {
           eyebrow="Список подопечных"
           title="Семья и близкие"
           description="Один родственник может заботиться о нескольких пожилых людях — и наоборот, если так удобнее семье."
-          action={<ActionLink to="/caregiver/seniors/ivan-ivanovich">Карточка Ивана Ивановича</ActionLink>}
+          action={
+            data.seniors[0] ? (
+              <ActionLink to={`/caregiver/seniors/${data.seniors[0].id}`}>
+                Карточка: {data.seniors[0].fullName}
+              </ActionLink>
+            ) : null
+          }
         />
         <div className="card-grid">
           {data.seniors.map((senior) => (
             <article key={senior.id} className="mini-card">
               <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
               <h3>{senior.fullName}</h3>
-              <p>{senior.age} лет</p>
+              {senior.age > 0 ? <p>{senior.age} лет</p> : null}
               <p>{senior.medicationProgress}</p>
-              <ActionLink to="/caregiver/seniors/ivan-ivanovich" tone="ghost">
-                Смотреть детали
-              </ActionLink>
+              <div className="button-row wrap-row">
+                <ActionLink to={`/caregiver/seniors/${senior.id}`} tone="ghost">
+                  Смотреть детали
+                </ActionLink>
+                <ActionLink to={`/caregiver/medications/new?seniorUserId=${senior.id}`} tone="secondary">
+                  Лекарство
+                </ActionLink>
+              </div>
             </article>
           ))}
         </div>
@@ -164,43 +189,121 @@ export const CaregiverSeniorsPage = () => {
 }
 
 export const CaregiverSeniorDetailPage = () => {
-  const overview = useSeniorOverviewQuery()
-  if (!overview.data) return null
+  const { seniorId } = useParams<{ seniorId: string }>()
+  const { data: dash } = useCaregiverDashboardQuery()
+  const useHttp = useBackendApi
+  const senior = dash?.seniors.find((s) => s.id === seniorId)
+  const demoMedications = seniorOverviewMock.medications
+  const demoCheckin = seniorOverviewMock.latestCheckin
+  const { data: httpDoses } = useQuery({
+    queryKey: ['care', 'today-doses', seniorId],
+    queryFn: () => careApi.listTodayDoses(seniorId),
+    enabled: useHttp && Boolean(seniorId),
+  })
+
+  const { data: latestCheckinEntry } = useQuery({
+    queryKey: ['care', 'checkins', seniorId, 'latest'],
+    queryFn: async () => {
+      const list = await careApi.listCheckins(seniorId, 1)
+      const row = list[0]
+      return row ? mapWellbeingCheckinToEntry(row) : null
+    },
+    enabled: useHttp && Boolean(seniorId),
+  })
+
+  if (!dash || !seniorId) return null
+  if (!senior) {
+    return (
+      <div className="page-stack">
+        <SectionCard>
+          <SectionHeader
+            eyebrow="Подопечный"
+            title="Не найдено"
+            description="Такого подопечного нет в вашем списке. Откройте раздел «Подопечные» и выберите человека из списка."
+          />
+          <ActionLink to="/caregiver/seniors">К списку подопечных</ActionLink>
+        </SectionCard>
+      </div>
+    )
+  }
 
   return (
     <div className="page-stack">
       <SectionCard>
         <SectionHeader
           eyebrow="Подопечный"
-          title={overview.data.senior.fullName}
+          title={senior.fullName}
           description="Самочувствие, лекарства и ближайшие шаги — всё в одном месте."
-          action={<ActionLink to="/caregiver/medications/new">Добавить лекарство</ActionLink>}
+          action={
+            <ActionLink to={`/caregiver/medications/new?seniorUserId=${senior.id}`}>
+              Добавить лекарство
+            </ActionLink>
+          }
         />
         <div className="panel-grid panel-grid-2">
           <article className="mini-card">
             <h3>Последняя отметка о самочувствии</h3>
-            <p>{overview.data.latestCheckin.dateLabel}</p>
-            <p>{overview.data.latestCheckin.note}</p>
+            {useHttp ? (
+              latestCheckinEntry ? (
+                <>
+                  <p>{latestCheckinEntry.dateLabel}</p>
+                  <p>{latestCheckinEntry.note ?? '—'}</p>
+                </>
+              ) : (
+                <p>Пока нет отметок о самочувствии за сегодня.</p>
+              )
+            ) : (
+              <>
+                <p>{demoCheckin.dateLabel}</p>
+                <p>{demoCheckin.note}</p>
+              </>
+            )}
           </article>
           <article className="mini-card">
             <h3>Сегодняшний ритм</h3>
-            <p>{overview.data.todaySummary}</p>
+            <p>
+              {useHttp
+                ? 'Краткая сводка по дню подключим вместе с историей приёмов лекарств.'
+                : seniorOverviewMock.todaySummary}
+            </p>
           </article>
         </div>
         <div className="list-stack">
-          {overview.data.medications.map((dose) => (
-            <article key={dose.id} className="list-item">
-              <div>
-                <strong>{dose.title}</strong>
-                <p>
-                  {dose.plannedTime} · {dose.dosageText}
-                </p>
-              </div>
-              <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
-                {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
-              </Pill>
-            </article>
-          ))}
+          {useHttp ? (
+            httpDoses && httpDoses.length > 0 ? (
+              httpDoses.map((dose) => (
+                <article key={dose.id} className="list-item">
+                  <div>
+                    <strong>{dose.title}</strong>
+                    <p>
+                      {dose.plannedTime} · {dose.dosageText}
+                    </p>
+                  </div>
+                  <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
+                    {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
+                  </Pill>
+                </article>
+              ))
+            ) : (
+              <article className="mini-card">
+                <p>Пока нет записанных приёмов на сегодня. Добавьте курс лекарств выше.</p>
+              </article>
+            )
+          ) : (
+            demoMedications.map((dose) => (
+              <article key={dose.id} className="list-item">
+                <div>
+                  <strong>{dose.title}</strong>
+                  <p>
+                    {dose.plannedTime} · {dose.dosageText}
+                  </p>
+                </div>
+                <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
+                  {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
+                </Pill>
+              </article>
+            ))
+          )}
         </div>
       </SectionCard>
     </div>
@@ -241,16 +344,11 @@ export const CaregiverEventsPage = () => {
   )
 }
 
-export const CaregiverAssistantPage = () => {
-  const overview = useSeniorOverviewQuery()
-  if (!overview.data) return null
-
-  return (
-    <div className="page-stack">
-      <AssistantPanel initialMessages={overview.data.assistantMessages} compact />
-    </div>
-  )
-}
+export const CaregiverAssistantPage = () => (
+  <div className="page-stack">
+    <AssistantPanel initialMessages={seniorOverviewMock.assistantMessages} compact />
+  </div>
+)
 
 export const CaregiverSettingsPage = () => (
   <div className="page-stack">
@@ -284,7 +382,11 @@ export const CaregiverInviteCreatePage = () => {
   const relationships = useAuthStore((state) => state.relationships)
   const createInviteMutation = useCreateInviteMutation()
   const [latestCode, setLatestCode] = useState('')
-  const invites = allInvites.filter((invite) => invite.createdByUserId === session?.id)
+  const useHttp = useBackendApi
+  const remoteInvites = useCareInvitesRemoteQuery()
+  const invites = useHttp
+    ? (remoteInvites.data ?? [])
+    : allInvites.filter((invite) => invite.createdByUserId === session?.id)
 
   return (
     <div className="page-stack">

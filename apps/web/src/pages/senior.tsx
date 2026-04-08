@@ -3,6 +3,8 @@ import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
 import { CheckinActions } from '@/features/senior-checkin/CheckinActions'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
 import { useAuthStore } from '@/app/store/auth-store'
+import { useBackendApi } from '@/shared/api/api-base'
+import { useRecordMedicationIntakeMutation } from '@/shared/api/care-client'
 import {
   useCheckinsQuery,
   useMedicationHistoryQuery,
@@ -154,6 +156,19 @@ export const SeniorHomePage = () => {
 
 export const SeniorTodayPage = () => {
   const { data } = useSeniorOverviewQuery()
+  const useHttp = useBackendApi
+  const intake = useRecordMedicationIntakeMutation()
+
+  const postIntake = (doseId: string, status: 'taken' | 'missed' | 'snoozed') => {
+    if (!useHttp) return
+    const colon = doseId.lastIndexOf(':')
+    if (colon < 0) return
+    const medicationId = doseId.slice(0, colon)
+    const slotIndex = Number(doseId.slice(colon + 1))
+    if (!Number.isFinite(slotIndex)) return
+    intake.mutate({ medicationId, slotIndex, status })
+  }
+
   if (!data) return null
 
   return (
@@ -180,11 +195,27 @@ export const SeniorTodayPage = () => {
                   : 'Подтверждение можно отключить, чтобы напоминание было мягче.'}
               </p>
               <div className="button-stack button-stack-mobile">
-                <ActionButton className="senior-cta">Принял</ActionButton>
-                <ActionButton tone="secondary" className="senior-cta">
+                <ActionButton
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'taken')}
+                >
+                  Принял
+                </ActionButton>
+                <ActionButton
+                  tone="secondary"
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'snoozed')}
+                >
                   Позже
                 </ActionButton>
-                <ActionButton tone="ghost" className="senior-cta">
+                <ActionButton
+                  tone="ghost"
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'missed')}
+                >
                   Пропустить
                 </ActionButton>
               </div>

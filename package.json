@@ -11,6 +11,7 @@
     "dev:web": "npm run dev --workspace web",
     "build:web": "npm run build --workspace web",
     "lint:web": "npm run lint --workspace web",
+    "test:web": "npm run test --workspace web",
     "install:all": "npm install"
   }
 }

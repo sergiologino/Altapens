@@ -9,4 +9,6 @@ import ru.altacare.backend.modules.users.domain.entity.UserEntity;
 public interface SeniorProfileRepository extends JpaRepository<SeniorProfileEntity, UUID> {
 
     Optional<SeniorProfileEntity> findByUser(UserEntity user);
+
+    Optional<SeniorProfileEntity> findByUser_Id(UUID userId);
 }

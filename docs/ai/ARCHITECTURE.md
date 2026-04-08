@@ -29,6 +29,7 @@
 
 ## Backend-архитектура
 - `apps/backend` строится как modular monolith на `Spring Boot + JPA + PostgreSQL + Flyway`
-- первый backend-срез покрывает модули `auth`, `users`, `profiles`, `care_network`, а также `common/security`, `common/errors`, `common/config`
+- backend-срез включает модули `auth`, `users`, `profiles`, `care_network`, `medications`, а также `common/security`, `common/errors`, `common/config`
 - миграции ведутся через `Flyway` SQL-файлами в `apps/backend/src/main/resources/db/migration`
+- для локальной разработки профиль `dev` может поднимать PostgreSQL через `spring-boot-docker-compose` и ресурс `compose-dev-postgres.yml` (см. `RUN_LOCAL.md`); интеграция Docker Compose в базовом конфиге по умолчанию отключена
 - frontend должен интегрироваться с backend через `/api/v1/auth/*` и `/api/v1/care/*`, сохраняя контракты из `packages/api-contracts`

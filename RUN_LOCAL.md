@@ -78,6 +78,25 @@ docker compose up -d postgres
 
 ## 2. Backend (`apps/backend`)
 
+### Профиль `dev` — PostgreSQL в Docker одной командой (рекомендуется для быстрого старта)
+
+Если установлен **Docker Desktop** (или иной Docker с CLI `docker compose`) и **порт 5432 свободен**, можно не поднимать Postgres вручную: Spring Boot сам выполнит `docker compose up` по файлу **`compose-dev-postgres.yml`** (лежит в `apps/backend/src/main/resources`, подключается через classpath — удобно и при запуске из корня монорепозитория в IDE) и дождётся готовности БД.
+
+Из каталога **`apps/backend`**:
+
+```powershell
+cd E:\1_MyProjects\AltaCare\AltaPens\apps\backend
+.\gradlew.bat bootRun --args="--spring.profiles.active=dev"
+```
+
+- Подмешивается профиль **`local`** (в т.ч. `show-sql` в консоли), плюс автозапуск контейнера.
+- Остановка приложения (Ctrl+C) по умолчанию останавливает и контейнер Postgres для этого compose-проекта.
+- Данные БД сохраняются в именованном Docker volume (`altapens_backend_dev_pgdata`).
+
+**IntelliJ IDEA:** в конфигурации Spring Boot укажите **Active profiles:** `dev` (достаточно одного значения: `local` подключается автоматически).
+
+Если Postgres на `5432` уже занят (локальный сервис Postgres и т.п.), используйте профиль **`local`** и свой `DB_URL` / другой проброс порта в Docker, как в разделе 1.
+
 ### Переменные окружения (рекомендуется)
 
 | Переменная | Пример | Описание |
@@ -189,8 +208,11 @@ npm run dev:web
 
 ## 4. Типичный порядок действий на один сеанс
 
-1. Запустить PostgreSQL (сервис Windows или `docker compose up -d postgres`).
-2. Запустить backend (`bootRun` или IDEA) с профилем **`local`** и верными `DB_*`.
+1. Запустить PostgreSQL **одним из способов:**  
+   **A)** профиль **`dev`** и Docker (см. раздел 2 выше), или  
+   **B)** `docker compose up -d postgres` из корня репозитория, или  
+   **C)** свой локальный сервис PostgreSQL с созданной БД `altacare`.
+2. Запустить backend (`bootRun` или IDEA) с профилем **`dev`** (если выбрали A) или **`local`** (если B/C) и при необходимости переменными `DB_*`.
 3. Убедиться, что <http://localhost:8080/actuator/health> отвечает **UP**.
 4. Создать `apps/web/.env.local` с `VITE_API_BASE_URL=http://localhost:8080`.
 5. `npm run dev:web` и открыть URL фронта в браузере.
@@ -224,7 +246,8 @@ cd E:\1_MyProjects\AltaCare\AltaPens\apps\backend
 | Симптом | Что проверить |
 |---------|----------------|
 | `database "altacare" does not exist` | Создать БД `CREATE DATABASE altacare;` |
-| Порт 5432 занят | Другой порт в URL / в Docker, обновить `DB_URL` |
+| Порт 5432 занят | Другой порт в URL / в Docker, обновить `DB_URL`; не смешивайте профиль `dev` с уже запущенным Postgres на том же порту |
+| Ошибка при старте с профилем `dev` про Docker / compose | Убедитесь, что Docker запущен; compose-файл подключается с classpath, отдельно задавать рабочую папку под `compose.yml` не требуется |
 | CORS / сеть с фронта | Фронт на `localhost` или `127.0.0.1`, backend на `8080`, `VITE_API_BASE_URL` без завершающего `/` |
 | 401 после логина | В ответе login есть `accessToken`; фронт сохраняет его в store — перезагрузите страницу только после успешного логина или проверьте, что `.env.local` подхватился (перезапуск `npm run dev:web`) |
 

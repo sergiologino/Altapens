@@ -1,5 +1,16 @@
 # AI Changelog
 
+## 2026-04-08
+- Backend: домен `medications` — Flyway `V2__medications.sql`, API `GET/POST /api/v1/care/medications`, `GET .../today-doses`, интеграционный тест `MedicationIntegrationTest`, демо-курс «Конкор» для Ивана в seed
+- Backend: Flyway `V3__wellbeing_and_intakes.sql` — `wellbeing_checkins`, `medication_intakes`; `CareSeniorResolver`; `POST/GET /care/checkins`, `POST /care/medications/intake`, `GET /care/timeline`; `@Transactional(readOnly)` на чтение с ленивыми связями; расширен `MedicationIntegrationTest`
+- Frontend: контракты zod для лекарств, расширен `care-client`, главная senior и история используют слоты с сервера; форма лекарств сохраняет через API с `?seniorUserId=` для опекуна; контракты и UI для чек-инов, приёма лекарств и ленты; обновлены AI-доки
+
+## 2026-04-07 (вечер)
+- Frontend: при настроенном backend (`VITE_API_BASE_URL` / same-origin) данные caregiver dashboard, списка подопечных и senior home берутся из care API; `care-client`, `care-dashboard`, `mock-care-data`, инвалидация кеша после login/register/accept invite; маршрут `/caregiver/seniors/:seniorId`; Vitest + `npm run test:web`; обновлены AI-доки
+
+## 2026-04-07
+- Backend: профиль Spring `dev` + `spring-boot-docker-compose` (`developmentOnly`) и `compose-dev-postgres.yml` на classpath — автозапуск PostgreSQL для локального `bootRun` без привязки к рабочей директории; по умолчанию `spring.docker.compose.enabled=false`, чтобы `local` и тесты не трогали Docker; тест `DevComposeFilePresenceTest`; обновлены `RUN_LOCAL.md` и AI-доки
+
 ## 2026-04-06
 - Удалены из истории Git вендорные `tools/gradle-8.10.2` и `gradle-8.10.2-bin.zip` (лимиты размера GitHub); сборка backend — через Gradle Wrapper в `apps/backend`
 - В `.gitignore` добавлены правила, чтобы локальный дистрибутив Gradle не попадал в коммиты; обновлён `docs/ai/CURRENT_STATE.md`

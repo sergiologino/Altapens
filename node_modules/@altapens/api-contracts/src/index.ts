@@ -84,6 +84,92 @@ export const careRelationshipSchema = z.object({
   status: z.literal('active'),
 })
 
+/** Элемент списка GET /care/seniors и GET /care/caregivers */
+export const careUserSummarySchema = z.object({
+  relationshipId: z.string(),
+  userId: z.string(),
+  fullName: z.string(),
+  email: z.string(),
+  status: z.literal('active'),
+})
+
+export const careUserSummaryListSchema = z.array(careUserSummarySchema)
+
+export const careInviteListSchema = z.array(careInviteSchema)
+
+export const medicationDoseStatusSchema = z.enum(['upcoming', 'taken', 'missed', 'snoozed'])
+
+export const medicationDoseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  dosageText: z.string(),
+  plannedTime: z.string(),
+  status: medicationDoseStatusSchema,
+  confirmationRequired: z.boolean(),
+})
+
+export const medicationDoseListSchema = z.array(medicationDoseSchema)
+
+export const medicationResponseSchema = z.object({
+  id: z.string(),
+  seniorUserId: z.string(),
+  title: z.string(),
+  dosageText: z.string(),
+  instructions: z.string(),
+  exactTimes: z.string(),
+  daysOfWeek: z.string(),
+  confirmationRequired: z.boolean(),
+  notifyOnMissed: z.boolean(),
+})
+
+export const medicationListSchema = z.array(medicationResponseSchema)
+
+export const createMedicationRequestSchema = z.object({
+  seniorUserId: z.string().optional(),
+  title: z.string().min(1),
+  dosageText: z.string().min(1),
+  instructions: z.string().min(1),
+  exactTimes: z.string().min(1),
+  daysOfWeek: z.string().min(1),
+  confirmationRequired: z.boolean(),
+  notifyOnMissed: z.boolean(),
+})
+
+export const wellbeingStateSchema = z.enum(['good', 'need_help', 'bad'])
+
+export const wellbeingCheckinSchema = z.object({
+  id: z.string(),
+  seniorUserId: z.string(),
+  state: wellbeingStateSchema,
+  note: z.string().nullable().optional(),
+  createdAt: z.string(),
+})
+
+export const wellbeingCheckinListSchema = z.array(wellbeingCheckinSchema)
+
+export const recordWellbeingCheckinRequestSchema = z.object({
+  seniorUserId: z.string().optional(),
+  state: wellbeingStateSchema,
+  note: z.string().max(500).optional(),
+})
+
+export const timelineItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  level: z.enum(['calm', 'watch', 'urgent']),
+  timeLabel: z.string(),
+})
+
+export const timelineItemListSchema = z.array(timelineItemSchema)
+
+export const recordMedicationIntakeRequestSchema = z.object({
+  seniorUserId: z.string().optional(),
+  medicationId: z.string(),
+  slotIndex: z.number().int().min(0),
+  status: z.enum(['taken', 'missed', 'snoozed']),
+})
+
 export type AuthActionResultDto = z.infer<typeof authActionResultSchema>
 export type AuthUserDto = z.infer<typeof authUserSchema>
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>
@@ -97,3 +183,11 @@ export type LookupInviteResponseDto = z.infer<typeof lookupInviteResponseSchema>
 export type AcceptInviteRequestDto = z.infer<typeof acceptInviteRequestSchema>
 export type AcceptInviteResponseDto = z.infer<typeof acceptInviteResponseSchema>
 export type CareRelationshipDto = z.infer<typeof careRelationshipSchema>
+export type CareUserSummaryDto = z.infer<typeof careUserSummarySchema>
+export type MedicationDoseDto = z.infer<typeof medicationDoseSchema>
+export type MedicationResponseDto = z.infer<typeof medicationResponseSchema>
+export type CreateMedicationRequestDto = z.infer<typeof createMedicationRequestSchema>
+export type WellbeingCheckinDto = z.infer<typeof wellbeingCheckinSchema>
+export type RecordWellbeingCheckinRequestDto = z.infer<typeof recordWellbeingCheckinRequestSchema>
+export type TimelineItemDto = z.infer<typeof timelineItemSchema>
+export type RecordMedicationIntakeRequestDto = z.infer<typeof recordMedicationIntakeRequestSchema>
