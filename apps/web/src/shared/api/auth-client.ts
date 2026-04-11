@@ -80,10 +80,19 @@ const localAuthApi: AuthApi = {
 }
 
 const parseJson = async <T>(response: Response, schema: { parse: (value: unknown) => T }) => {
-  const payload = await response.json()
+  const text = await response.text()
+  let payload: unknown
+  try {
+    payload = text ? JSON.parse(text) : null
+  } catch {
+    const hint = text?.trim() || `HTTP ${response.status}`
+    throw new Error(hint)
+  }
   if (!response.ok) {
     const message =
-      typeof payload?.message === 'string' ? payload.message : 'Request failed'
+      typeof (payload as { message?: unknown })?.message === 'string'
+        ? (payload as { message: string }).message
+        : 'Request failed'
     throw new Error(message)
   }
 
