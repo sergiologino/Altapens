@@ -1252,3 +1252,32 @@ select.text-input {
   border-bottom: 1px solid var(--color-border-soft);
   margin-bottom: var(--space-6);
 }
+
+.assistant-disclaimer {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  color: var(--color-content-secondary);
+  background: rgba(45, 127, 131, 0.08);
+  border: 1px solid var(--color-border-soft);
+}
+
+.medication-memory-block {
+  margin-top: var(--space-3);
+}
+
+.medication-memory-text {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-loose);
+  color: var(--color-content-secondary);
+}
+
+.medication-curator-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-loose);
+  color: var(--color-content-secondary);
+}

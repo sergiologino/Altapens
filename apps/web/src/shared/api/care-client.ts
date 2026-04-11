@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
   careInviteListSchema,
   careRelationshipSchema,
@@ -215,6 +216,62 @@ const localCareApi: CareApi = {
 }
 
 export const careApi: CareApi = useBackendApi ? httpCareApi : localCareApi
+
+const assistantChatResponseSchema = z.object({
+  content: z.string(),
+  audioBase64Wav: z.string().optional(),
+})
+
+export type AssistantChatResult = z.infer<typeof assistantChatResponseSchema>
+
+/** Ответ помощника через backend → noteapp-ai-integration (нужны AI_INTEGRATION_* на сервере). */
+const neuralSpeechResponseSchema = z.object({
+  audioBase64: z.string(),
+  mimeType: z.string(),
+})
+
+/** OpenAI TTS через backend (нужны OPENAI_TTS_* на сервере и VITE_NEURAL_TTS на фронте). */
+export async function postNeuralSpeech(text: string): Promise<{ audioBase64: string; mimeType: string }> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/care/assistant/neural-speech`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...withAuthHeaders(),
+    },
+    body: JSON.stringify({ text }),
+  })
+  const payload: unknown = await response.json()
+  if (!response.ok) {
+    const msg =
+      typeof payload === 'object' && payload !== null && 'message' in payload
+        ? String((payload as { message?: unknown }).message)
+        : 'Neural speech failed'
+    const full = msg || 'Neural speech failed'
+    console.warn('[neural-speech]', response.status, full)
+    throw new Error(full)
+  }
+  return neuralSpeechResponseSchema.parse(payload)
+}
+
+export async function postAssistantChat(message: string): Promise<AssistantChatResult> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/care/assistant/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...withAuthHeaders(),
+    },
+    body: JSON.stringify({ message }),
+  })
+  const payload: unknown = await response.json()
+  if (!response.ok) {
+    const msg =
+      typeof payload === 'object' && payload !== null && 'message' in payload
+        ? String((payload as { message?: unknown }).message)
+        : 'Assistant request failed'
+    throw new Error(msg || 'Assistant request failed')
+  }
+  return assistantChatResponseSchema.parse(payload)
+}
 
 const invalidateAfterMedicationChange = (queryClient: ReturnType<typeof useQueryClient>) => {
   void queryClient.invalidateQueries({ queryKey: ['senior-overview'] })

@@ -278,6 +278,12 @@ export const CaregiverSeniorDetailPage = () => {
                     <p>
                       {dose.plannedTime} · {dose.dosageText}
                     </p>
+                    {dose.instructions?.trim() ? (
+                      <p className="medication-curator-note">
+                        <span className="field-label">Памятка: </span>
+                        {dose.instructions.trim()}
+                      </p>
+                    ) : null}
                   </div>
                   <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
                     {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
@@ -297,6 +303,12 @@ export const CaregiverSeniorDetailPage = () => {
                   <p>
                     {dose.plannedTime} · {dose.dosageText}
                   </p>
+                  {dose.instructions?.trim() ? (
+                    <p className="medication-curator-note">
+                      <span className="field-label">Памятка: </span>
+                      {dose.instructions.trim()}
+                    </p>
+                  ) : null}
                 </div>
                 <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
                   {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}

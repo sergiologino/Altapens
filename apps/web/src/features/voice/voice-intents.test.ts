@@ -10,6 +10,7 @@ const dose0: MedicationDose = {
   id: 'a1b2d3c4-e5f6-7890-abcd-ef1234567890:0',
   title: 'Конкор',
   dosageText: '5 мг',
+  instructions: 'После еды',
   plannedTime: '09:00',
   status: 'upcoming',
   confirmationRequired: true,

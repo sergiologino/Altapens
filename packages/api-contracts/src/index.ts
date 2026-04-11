@@ -103,6 +103,8 @@ export const medicationDoseSchema = z.object({
   id: z.string(),
   title: z.string(),
   dosageText: z.string(),
+  /** Как принимать: видно подопечному и куратору */
+  instructions: z.string(),
   plannedTime: z.string(),
   status: medicationDoseStatusSchema,
   confirmationRequired: z.boolean(),

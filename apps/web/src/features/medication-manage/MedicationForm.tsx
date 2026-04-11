@@ -113,8 +113,13 @@ export const MedicationForm = () => {
           ) : null}
         </label>
         <label className="field-group field-span-2">
-          <span className="field-label">Инструкция</span>
-          <textarea className="text-input text-area" rows={3} {...register('instructions')} />
+          <span className="field-label">Как принимать (памятка для подопечного и для вас)</span>
+          <textarea
+            className="text-input text-area"
+            rows={3}
+            {...register('instructions')}
+            placeholder="Например: после еды, запить водой. Один текст видят и подопечный, и куратор."
+          />
           {errors.instructions ? (
             <span className="field-error">{errors.instructions.message}</span>
           ) : null}

@@ -2,6 +2,8 @@
 
 Монорепозиторий: **frontend** (`apps/web`) + **backend** (`apps/backend`). Лендинг в этом документе не описан.
 
+**Что добавлено в инструкцию:** раздел **«AI Integration Service (LLM)»** — отдельный Spring-проект, своя БД PostgreSQL, переменные окружения для БД/JWT/шифрования и опционально TTS; **ключи OpenAI и других провайдеров LLM** в клиент AltaPens не кладутся: они задаются **в админке AI Integration** (хранятся в БД в зашифрованном виде). Панель помощника в веб-приложении пока может работать на локальной логике (`life-advice`); подключение фронта к AI Integration — по мере интеграции.
+
 ---
 
 ## Что должно быть установлено
@@ -65,6 +67,8 @@
 | IDEA / система | `JWT_SECRET` | строка **не короче 32 символов** | подпись JWT |
 | IDEA / система | `SERVER_PORT` | `8080` | порт HTTP backend (по умолчанию 8080) |
 | **`apps/web/.env.local`** (Vite) | `VITE_API_BASE_URL` | `http://localhost:8080` | базовый URL API для фронта |
+
+**LLM / OpenAI:** в **`apps/web/.env.local` секреты провайдеров не указываются** (Vite отдаёт env в браузер). Доступ к моделям идёт через сервис **AI Integration** (см. раздел **«AI Integration Service (LLM)»** ниже): ключи задаются там, в админке, после старта.
 
 Если переменные для БД и JWT не заданы, подставляются значения из `application.yml` (для продакшена **обязательно** задать свой `JWT_SECRET`).
 
@@ -394,3 +398,67 @@ docker compose up --build
 | Нет запроса микрофона | Разрешите сайту доступ к микрофону в настройках браузера. |
 | Речь не распознаётся | Говорите после нажатия кнопки чётко; язык распознавания — русский (`ru-RU`). |
 | Команда «не поняла» | Назовите препарат так же, как в списке на сегодня; для пропуска скажите «пропустил …», затем «да» для подтверждения. |
+
+---
+
+## 9. AI Integration Service (LLM) — отдельный репозиторий
+
+Для вызовов **chat / Whisper / встроенных сетей** используется проект **`noteapp-ai-integration`** (не входит в монорепозиторий AltaPens). Его можно поднять второй конфигурацией в IntelliJ IDEA и **отдельной базой** PostgreSQL на том же установленном Postgres (другая БД и при необходимости другой пользователь).
+
+### PostgreSQL
+
+1. Создайте БД, например **`ai_integration_db`** (имя по умолчанию в `application.yml` сервиса).
+2. Создайте пользователя и выдайте права, **или** используйте своего пользователя и передайте его в `DB_USER` / `DB_PASSWORD`.
+3. По умолчанию в шаблоне сервиса: `jdbc:postgresql://localhost:5432/ai_integration_db`, пользователь **`ai_admin`** / пароль **`ai_admin`** — задайте их в SQL, если хотите совпадать с дефолтами без env.
+
+Пример (подстройте имена и пароли):
+
+```sql
+CREATE DATABASE ai_integration_db;
+CREATE USER ai_admin WITH PASSWORD 'ai_admin';
+GRANT ALL PRIVILEGES ON DATABASE ai_integration_db TO ai_admin;
+-- при необходимости: права на схему public после первого подключения
+```
+
+### Запуск в IntelliJ IDEA
+
+1. **File → Open** → каталог с клоном **`noteapp-ai-integration`** (корень Gradle-проекта).
+2. Дождитесь импорта Gradle, JDK **17+**.
+3. Main class: **`com.example.integration.NoteappAiIntegrationApplication`**.
+4. **Environment variables** (Windows, в одной строке через `;`):
+
+```text
+DB_URL=jdbc:postgresql://localhost:5432/ai_integration_db;DB_USER=ai_admin;DB_PASSWORD=ai_admin;JWT_SECRET=local-ai-integration-jwt-secret-min-32-chars!!;ENCRYPTION_SECRET_KEY=change-this-to-32-byte-secret-key-in-production!!!!!;SERVER_PORT=8091
+```
+
+- **`JWT_SECRET`** — не короче 32 символов для нормальной работы JWT.
+- **`ENCRYPTION_SECRET_KEY`** — секрет для AES-шифрования API-ключей провайдеров в БД (см. `EncryptionService` в репозитории интеграции). Для локалки можно взять значение по умолчанию из `application.yml`; для продакшена задайте свой длинный секрет и **не меняйте** его после того, как в БД уже сохранены ключи, иначе расшифровка перестанет работать.
+
+Проверка: **http://localhost:8091/actuator/health** → **UP** (порт по умолчанию **8091**, см. `SERVER_PORT`).
+
+### Переменные окружения, связанные с AI и TTS
+
+| Переменная | Пример | Назначение |
+|------------|--------|------------|
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | см. выше | Подключение к PostgreSQL |
+| `JWT_SECRET` | строка ≥ 32 символов | JWT сервиса интеграции |
+| `ENCRYPTION_SECRET_KEY` | см. `application.yml` / свой секрет | Шифрование ключей провайдеров в БД (не менять после записи ключей в БД) |
+| `SERVER_PORT` | `8091` | HTTP-порт сервиса |
+| `AI_REQUEST_TIMEOUT` | `60` | Таймаут запросов к нейросетям (сек.) |
+| `AI_MAX_RETRIES` | `3` | Повторы |
+| `AI_ENABLE_FALLBACK` | `true` | Fallback при rate limit (если настроен) |
+| `AI_TTS_ENABLED` | `false` | Опционально: озвучка ответа чата через отдельный HTTP TTS (например Qwen в Docker) |
+| `AI_TTS_BASE_URL` | `http://127.0.0.1:8000` | Базовый URL TTS, если `AI_TTS_ENABLED=true` |
+| `AI_TTS_CONNECT_TIMEOUT_MS` | `5000` | Таймаут соединения с TTS |
+| `AI_TTS_READ_TIMEOUT_MS` | `180000` | Таймаут чтения ответа TTS |
+
+### Где задаются ключи доступа к OpenAI и другим LLM
+
+**Не через `VITE_*` и не через отдельный файл в AltaPens.** После миграций Flyway в AI Integration в базе есть записи нейросетей; **ключи API (OpenAI, Whisper и т.д.) вносятся в админ-панели** сервиса интеграции и сохраняются **зашифрованными** (задайте стабильный **`ENCRYPTION_SECRET_KEY`** до сохранения ключей; смена секрета сделает старые записи нечитаемыми).
+
+Подробности по развёртыванию и API — в **`README.md`** и **`QUICK_START.md`** репозитория `noteapp-ai-integration`.
+
+### Связка с AltaPens
+
+- **AltaCare / AltaPens** по-прежнему использует свой backend на **8080** и опционально **noteapp-ai-integration** на **8091** как отдельный микросервис.
+- Типичный локальный порядок: поднять Postgres → при необходимости **две** БД (`altacare`, `ai_integration_db`) → запустить backend AltaPens → при работе с LLM запустить AI Integration → фронт AltaPens (`npm run dev:web`) с `VITE_API_BASE_URL=http://localhost:8080` до появления прокси/API к интеграции со стороны вашего backend.

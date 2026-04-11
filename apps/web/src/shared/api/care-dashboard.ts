@@ -322,6 +322,7 @@ function mapDoses(doses: MedicationDoseDto[]): MedicationDose[] {
     id: d.id,
     title: d.title,
     dosageText: d.dosageText,
+    instructions: d.instructions ?? '',
     plannedTime: d.plannedTime,
     status: d.status,
     confirmationRequired: d.confirmationRequired,

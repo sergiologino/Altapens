@@ -81,6 +81,7 @@ public class MedicationService {
                         key,
                         m.getTitle(),
                         m.getDosageText(),
+                        m.getInstructions() == null ? "" : m.getInstructions(),
                         planned,
                         effective.name(),
                         m.isConfirmationRequired()));

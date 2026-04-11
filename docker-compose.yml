@@ -60,5 +60,30 @@ services:
       backend:
         condition: service_healthy
 
+  # Опционально: Qwen3-TTS на GPU (отдельный профиль, не мешает основному стеку).
+  # Запуск: docker compose --profile tts up -d tts-qwen
+  tts-qwen:
+    profiles: ["tts"]
+    build:
+      context: ./docker/tts-qwen
+    container_name: altapens-tts-qwen
+    ports:
+      - "8000:8000"
+    environment:
+      QWEN_TTS_MODEL: ${QWEN_TTS_MODEL:-Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/}
+      QWEN_TTS_DEVICE: ${QWEN_TTS_DEVICE:-cuda:0}
+      QWEN_TTS_DTYPE: ${QWEN_TTS_DTYPE:-bfloat16}
+      QWEN_TTS_ATTN: ${QWEN_TTS_ATTN:-sdpa}
+    volumes:
+      - altapens_hf_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
 volumes:
   altapens_pgdata:
+  altapens_hf_cache:

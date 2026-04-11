@@ -3,6 +3,7 @@ import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
 import { SeniorVoiceShell } from '@/features/voice/SeniorVoiceShell'
 import { CheckinActions } from '@/features/senior-checkin/CheckinActions'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
+import { MedicationMemoryBlock } from '@/features/medications/MedicationMemoryBlock'
 import { useAuthStore } from '@/app/store/auth-store'
 import { useBackendApi } from '@/shared/api/api-base'
 import { useRecordMedicationIntakeMutation } from '@/shared/api/care-client'
@@ -87,6 +88,7 @@ export const SeniorLayout = () => {
 
 export const SeniorHomePage = () => {
   const { data } = useSeniorOverviewQuery()
+  const { voiceEnabled } = useAccessibilityStore()
   if (!data) return null
 
   return (
@@ -120,6 +122,12 @@ export const SeniorHomePage = () => {
                 <div>
                   <strong>{medication.title}</strong>
                   <p>{medication.dosageText}</p>
+                  <MedicationMemoryBlock
+                    title={medication.title}
+                    dosageText={medication.dosageText}
+                    instructions={medication.instructions}
+                    hideSpeakButtons={!voiceEnabled}
+                  />
                 </div>
                 <div className="medication-meta">
                   <Pill tone={doseTone(medication.status)}>{medication.plannedTime}</Pill>
@@ -160,6 +168,7 @@ export const SeniorHomePage = () => {
 
 export const SeniorTodayPage = () => {
   const { data } = useSeniorOverviewQuery()
+  const { voiceEnabled } = useAccessibilityStore()
   const useHttp = useBackendApi
   const intake = useRecordMedicationIntakeMutation()
 
@@ -193,6 +202,12 @@ export const SeniorTodayPage = () => {
                 </div>
                 <Pill tone={doseTone(dose.status)}>{dose.plannedTime}</Pill>
               </div>
+              <MedicationMemoryBlock
+                title={dose.title}
+                dosageText={dose.dosageText}
+                instructions={dose.instructions}
+                hideSpeakButtons={!voiceEnabled}
+              />
               <p className="medication-note">
                 {dose.confirmationRequired
                   ? 'Для этого приёма нужно одно нажатие подтверждения.'

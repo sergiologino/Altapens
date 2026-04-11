@@ -54,6 +54,8 @@ export interface MedicationDose {
   id: string
   title: string
   dosageText: string
+  /** Памятка куратора / как принимать — один текст для подопечного и родственника */
+  instructions: string
   plannedTime: string
   status: 'upcoming' | 'taken' | 'missed' | 'snoozed'
   confirmationRequired: boolean
@@ -80,6 +82,8 @@ export interface AssistantMessage {
   id: string
   role: 'assistant' | 'user'
   content: string
+  /** Если задано у ассистента — воспроизведение с устройства как WAV; иначе — Web Speech по content */
+  audioBase64Wav?: string
 }
 
 export interface SeniorOverview {
