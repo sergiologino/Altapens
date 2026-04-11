@@ -132,14 +132,24 @@ export const LoginPage = () => {
           </label>
           <label className="field-group">
             <span className="field-label">Электронная почта</span>
-            <input className="text-input" {...form.register('email')} placeholder="anna@altacare.demo" />
+            <input
+              className="text-input"
+              autoComplete="username"
+              {...form.register('email')}
+              placeholder="anna@altacare.demo"
+            />
             {form.formState.errors.email ? (
               <span className="field-error">{form.formState.errors.email.message}</span>
             ) : null}
           </label>
           <label className="field-group field-span-2">
             <span className="field-label">Пароль</span>
-            <input className="text-input" type="password" {...form.register('password')} />
+            <input
+              className="text-input"
+              type="password"
+              autoComplete="current-password"
+              {...form.register('password')}
+            />
             {form.formState.errors.password ? (
               <span className="field-error">{form.formState.errors.password.message}</span>
             ) : null}
@@ -230,28 +240,33 @@ export const RegisterPage = () => {
         </label>
         <label className="field-group">
           <span className="field-label">ФИО / имя</span>
-          <input className="text-input" {...form.register('fullName')} />
+          <input className="text-input" autoComplete="name" {...form.register('fullName')} />
           {form.formState.errors.fullName ? (
             <span className="field-error">{form.formState.errors.fullName.message}</span>
           ) : null}
         </label>
         <label className="field-group">
           <span className="field-label">Электронная почта</span>
-          <input className="text-input" {...form.register('email')} />
+          <input className="text-input" autoComplete="email" {...form.register('email')} />
           {form.formState.errors.email ? (
             <span className="field-error">{form.formState.errors.email.message}</span>
           ) : null}
         </label>
         <label className="field-group">
           <span className="field-label">Телефон</span>
-          <input className="text-input" {...form.register('phone')} />
+          <input className="text-input" autoComplete="tel" {...form.register('phone')} />
           {form.formState.errors.phone ? (
             <span className="field-error">{form.formState.errors.phone.message}</span>
           ) : null}
         </label>
         <label className="field-group">
           <span className="field-label">Пароль</span>
-          <input className="text-input" type="password" {...form.register('password')} />
+          <input
+            className="text-input"
+            type="password"
+            autoComplete="new-password"
+            {...form.register('password')}
+          />
           {form.formState.errors.password ? (
             <span className="field-error">{form.formState.errors.password.message}</span>
           ) : null}

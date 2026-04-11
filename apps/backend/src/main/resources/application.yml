@@ -43,6 +43,13 @@ springdoc:
     path: /swagger-ui
 
 app:
+  # Разрешённые Origin для браузера (не используйте суффикс :* у домена без порта — Origin будет https://altapens.ru).
+  cors:
+    allowed-origin-patterns:
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+      - "https://altapens.ru"
+      - "https://www.altapens.ru"
   security:
     jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
     issuer: altacare-backend
