@@ -3,6 +3,10 @@
 # Зависимости
 node_modules/
 
+# Python
+**/__pycache__/
+*.py[cod]
+
 # Переменные окружения и секреты (шаблоны *.example не игнорируем)
 .env
 .env.*
@@ -17,8 +21,13 @@ dist-ssr/
 # Сборка и кэш Gradle / JVM (backend)
 apps/backend/build/
 apps/backend/.gradle/
+apps/backend/bin/
 **/out/
 **/*.class
+
+# Локальные env с секретами (шаблон — env_backend.example.txt)
+apps/backend/env_backend.txt
+apps/backend/.env
 
 # Тесты и покрытие
 coverage/

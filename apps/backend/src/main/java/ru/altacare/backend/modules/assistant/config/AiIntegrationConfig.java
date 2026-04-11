@@ -1,0 +1,24 @@
+package ru.altacare.backend.modules.assistant.config;
+
+import java.time.Duration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+@EnableConfigurationProperties(AiIntegrationProperties.class)
+public class AiIntegrationConfig {
+
+    @Bean
+    public RestTemplate aiIntegrationRestTemplate(
+            RestTemplateBuilder builder,
+            AiIntegrationProperties properties
+    ) {
+        return builder
+                .setConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
+                .setReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()))
+                .build();
+    }
+}

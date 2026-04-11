@@ -1,11 +1,20 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useParams } from 'react-router-dom'
 import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
 import { useAuthStore } from '@/app/store/auth-store'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
 import { MedicationForm } from '@/features/medication-manage/MedicationForm'
 import { useCreateInviteMutation } from '@/shared/api/auth-client'
-import { useCaregiverDashboardQuery, useSeniorOverviewQuery, useTimelineQuery } from '@/shared/api/mock-api'
+import { useBackendApi } from '@/shared/api/api-base'
+import { careApi } from '@/shared/api/care-client'
+import {
+  mapWellbeingCheckinToEntry,
+  useCareInvitesRemoteQuery,
+  useCaregiverDashboardQuery,
+  useTimelineQuery,
+} from '@/shared/api/mock-api'
+import { seniorOverviewMock } from '@/shared/api/mock-care-data'
 import {
   ActionButton,
   ActionLink,
@@ -16,6 +25,7 @@ import {
   SectionHeader,
   ShellNav,
 } from '@/shared/ui/primitives'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 const caregiverLinks = [
   { to: '/caregiver', label: 'Обзор' },
@@ -39,7 +49,7 @@ export const CaregiverLayout = () => {
       nav={
         <ShellNav
           title="Панель заботы"
-          subtitle="Всё важное о близких: самочувствие, лекарства и события — без лишнего шума."
+          subtitle="Разделы приложения"
           links={caregiverLinks}
           footer={
             session ? (
@@ -76,10 +86,9 @@ export const CaregiverDashboardPage = () => {
     <div className="page-stack">
       <SectionCard tone="accent" className="hero-card caregiver-hero">
         <span className="eyebrow">Здравствуйте, {data.caregiver.displayName}</span>
-        <h2 className="hero-card-title">Спокойный взгляд на день близких</h2>
+        <h2 className="hero-card-title">Обзор на сегодня</h2>
         <p className="hero-card-text">
-          Здесь только то, на что стоит обратить внимание: как себя чувствуют подопечные, как идут
-          приёмы лекарств и что произошло за сегодня.
+          Сводка по подопечным: самочувствие, приёмы лекарств и события за день.
         </p>
         <div className="metric-grid">
           {data.todayMetrics.map((metric) => (
@@ -93,7 +102,7 @@ export const CaregiverDashboardPage = () => {
           <SectionHeader
             eyebrow="Подопечные"
             title="Как дела сейчас"
-            description="Чуть больше деталей, чем у пожилого человека в его приложении, но без перегруза."
+            description="Список подопечных и краткий статус."
           />
           <div className="list-stack">
             {data.seniors.map((senior) => (
@@ -103,7 +112,12 @@ export const CaregiverDashboardPage = () => {
                   <p>{senior.medicationProgress}</p>
                   <small>{senior.nextReminder}</small>
                 </div>
-                <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
+                <div className="button-row wrap-row" style={{ justifyContent: 'flex-end' }}>
+                  <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
+                  <ActionLink to={`/caregiver/seniors/${senior.id}`} tone="ghost">
+                    Открыть
+                  </ActionLink>
+                </div>
               </article>
             ))}
           </div>
@@ -117,7 +131,7 @@ export const CaregiverDashboardPage = () => {
           <SectionHeader
             eyebrow="Помощник"
             title="Коротко о дне"
-            description="Подсказки, где лучше позвонить или навести близкого лично, а не просто «поставить галочку»."
+            description="Текстовые подсказки по данным за сегодня."
           />
           <div className="list-stack">
             {data.aiSummaries.map((summary) => (
@@ -142,19 +156,30 @@ export const CaregiverSeniorsPage = () => {
         <SectionHeader
           eyebrow="Список подопечных"
           title="Семья и близкие"
-          description="Один родственник может заботиться о нескольких пожилых людях — и наоборот, если так удобнее семье."
-          action={<ActionLink to="/caregiver/seniors/ivan-ivanovich">Карточка Ивана Ивановича</ActionLink>}
+          description="Все подопечные, привязанные к вашему аккаунту."
+          action={
+            data.seniors[0] ? (
+              <ActionLink to={`/caregiver/seniors/${data.seniors[0].id}`}>
+                Карточка: {data.seniors[0].fullName}
+              </ActionLink>
+            ) : null
+          }
         />
         <div className="card-grid">
           {data.seniors.map((senior) => (
             <article key={senior.id} className="mini-card">
               <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
               <h3>{senior.fullName}</h3>
-              <p>{senior.age} лет</p>
+              {senior.age > 0 ? <p>{senior.age} лет</p> : null}
               <p>{senior.medicationProgress}</p>
-              <ActionLink to="/caregiver/seniors/ivan-ivanovich" tone="ghost">
-                Смотреть детали
-              </ActionLink>
+              <div className="button-row wrap-row">
+                <ActionLink to={`/caregiver/seniors/${senior.id}`} tone="ghost">
+                  Смотреть детали
+                </ActionLink>
+                <ActionLink to={`/caregiver/medications/new?seniorUserId=${senior.id}`} tone="secondary">
+                  Лекарство
+                </ActionLink>
+              </div>
             </article>
           ))}
         </div>
@@ -164,43 +189,133 @@ export const CaregiverSeniorsPage = () => {
 }
 
 export const CaregiverSeniorDetailPage = () => {
-  const overview = useSeniorOverviewQuery()
-  if (!overview.data) return null
+  const { seniorId } = useParams<{ seniorId: string }>()
+  const { data: dash } = useCaregiverDashboardQuery()
+  const useHttp = useBackendApi
+  const senior = dash?.seniors.find((s) => s.id === seniorId)
+  const demoMedications = seniorOverviewMock.medications
+  const demoCheckin = seniorOverviewMock.latestCheckin
+  const { data: httpDoses } = useQuery({
+    queryKey: ['care', 'today-doses', seniorId],
+    queryFn: () => careApi.listTodayDoses(seniorId),
+    enabled: useHttp && Boolean(seniorId),
+  })
+
+  const { data: latestCheckinEntry } = useQuery({
+    queryKey: ['care', 'checkins', seniorId, 'latest'],
+    queryFn: async () => {
+      const list = await careApi.listCheckins(seniorId, 1)
+      const row = list[0]
+      return row ? mapWellbeingCheckinToEntry(row) : null
+    },
+    enabled: useHttp && Boolean(seniorId),
+  })
+
+  if (!dash || !seniorId) return null
+  if (!senior) {
+    return (
+      <div className="page-stack">
+        <SectionCard>
+          <SectionHeader
+            eyebrow="Подопечный"
+            title="Не найдено"
+            description="Выберите подопечного в списке «Подопечные»."
+          />
+          <ActionLink to="/caregiver/seniors">К списку подопечных</ActionLink>
+        </SectionCard>
+      </div>
+    )
+  }
 
   return (
     <div className="page-stack">
       <SectionCard>
         <SectionHeader
           eyebrow="Подопечный"
-          title={overview.data.senior.fullName}
-          description="Самочувствие, лекарства и ближайшие шаги — всё в одном месте."
-          action={<ActionLink to="/caregiver/medications/new">Добавить лекарство</ActionLink>}
+          title={senior.fullName}
+          description="Самочувствие, лекарства и действия."
+          action={
+            <ActionLink to={`/caregiver/medications/new?seniorUserId=${senior.id}`}>
+              Добавить лекарство
+            </ActionLink>
+          }
         />
         <div className="panel-grid panel-grid-2">
           <article className="mini-card">
             <h3>Последняя отметка о самочувствии</h3>
-            <p>{overview.data.latestCheckin.dateLabel}</p>
-            <p>{overview.data.latestCheckin.note}</p>
+            {useHttp ? (
+              latestCheckinEntry ? (
+                <>
+                  <p>{latestCheckinEntry.dateLabel}</p>
+                  <p>{latestCheckinEntry.note ?? '—'}</p>
+                </>
+              ) : (
+                <p>Пока нет отметок о самочувствии за сегодня.</p>
+              )
+            ) : (
+              <>
+                <p>{demoCheckin.dateLabel}</p>
+                <p>{demoCheckin.note}</p>
+              </>
+            )}
           </article>
           <article className="mini-card">
             <h3>Сегодняшний ритм</h3>
-            <p>{overview.data.todaySummary}</p>
+            <p>
+              {useHttp
+                ? 'Краткая сводка по дню подключим вместе с историей приёмов лекарств.'
+                : seniorOverviewMock.todaySummary}
+            </p>
           </article>
         </div>
         <div className="list-stack">
-          {overview.data.medications.map((dose) => (
-            <article key={dose.id} className="list-item">
-              <div>
-                <strong>{dose.title}</strong>
-                <p>
-                  {dose.plannedTime} · {dose.dosageText}
-                </p>
-              </div>
-              <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
-                {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
-              </Pill>
-            </article>
-          ))}
+          {useHttp ? (
+            httpDoses && httpDoses.length > 0 ? (
+              httpDoses.map((dose) => (
+                <article key={dose.id} className="list-item">
+                  <div>
+                    <strong>{dose.title}</strong>
+                    <p>
+                      {dose.plannedTime} · {dose.dosageText}
+                    </p>
+                    {dose.instructions?.trim() ? (
+                      <p className="medication-curator-note">
+                        <span className="field-label">Памятка: </span>
+                        {dose.instructions.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
+                    {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
+                  </Pill>
+                </article>
+              ))
+            ) : (
+              <article className="mini-card">
+                <p>Пока нет записанных приёмов на сегодня. Добавьте курс лекарств выше.</p>
+              </article>
+            )
+          ) : (
+            demoMedications.map((dose) => (
+              <article key={dose.id} className="list-item">
+                <div>
+                  <strong>{dose.title}</strong>
+                  <p>
+                    {dose.plannedTime} · {dose.dosageText}
+                  </p>
+                  {dose.instructions?.trim() ? (
+                    <p className="medication-curator-note">
+                      <span className="field-label">Памятка: </span>
+                      {dose.instructions.trim()}
+                    </p>
+                  ) : null}
+                </div>
+                <Pill tone={dose.status === 'taken' ? 'calm' : 'watch'}>
+                  {dose.status === 'taken' ? 'Подтверждено' : 'Ожидается'}
+                </Pill>
+              </article>
+            ))
+          )}
         </div>
       </SectionCard>
     </div>
@@ -223,7 +338,7 @@ export const CaregiverEventsPage = () => {
         <SectionHeader
           eyebrow="События"
           title="Что произошло"
-          description="Напоминания, пропуски лекарств, сообщения от помощника и подозрительные звонки — в одной ленте."
+          description="Хронология: лекарства, помощник, важное."
         />
         <div className="list-stack">
           {data.map((item) => (
@@ -241,39 +356,59 @@ export const CaregiverEventsPage = () => {
   )
 }
 
-export const CaregiverAssistantPage = () => {
-  const overview = useSeniorOverviewQuery()
-  if (!overview.data) return null
-
-  return (
-    <div className="page-stack">
-      <AssistantPanel initialMessages={overview.data.assistantMessages} compact />
-    </div>
-  )
-}
+export const CaregiverAssistantPage = () => (
+  <div className="page-stack">
+    <AssistantPanel initialMessages={seniorOverviewMock.assistantMessages} compact />
+  </div>
+)
 
 export const CaregiverSettingsPage = () => (
   <div className="page-stack">
     <SectionCard>
       <SectionHeader
         eyebrow="Настройки"
-        title="Доступ и уведомления"
-        description="Здесь можно будет настроить, кому что видно и как приходят напоминания — спокойно и по-человечески."
+        title="Экран и разделы"
+        description="Тема оформления и переходы к разделам приложения."
       />
-      <div className="card-grid">
-        <article className="mini-card">
-          <h3>Приглашения в семью</h3>
-          <p>Подключение близких по коду или, при необходимости, по QR — без сложных шагов.</p>
-        </article>
-        <article className="mini-card">
-          <h3>Уведомления</h3>
-          <p>Сообщения о пропусках лекарств, тревожных сигналах и краткие сводки от помощника.</p>
-        </article>
-        <article className="mini-card">
-          <h3>Согласие на данные</h3>
-          <p>Личные сведения и здоровье используются только если близкий человек на это согласен.</p>
-        </article>
+      <div className="settings-theme-block">
+        <h3 className="settings-subheading">Тема</h3>
+        <ThemeToggle />
       </div>
+      <h3 className="settings-subheading">Разделы</h3>
+      <ul className="settings-nav-list">
+        <li>
+          <div className="settings-nav-row">
+            <div className="settings-nav-row-main">
+              <h3>Приглашения в семью</h3>
+              <p>Создать код и список приглашений.</p>
+            </div>
+            <ActionLink to="/caregiver/invites/new" tone="secondary">
+              Открыть
+            </ActionLink>
+          </div>
+        </li>
+        <li>
+          <div className="settings-nav-row settings-nav-row--stack">
+            <div className="settings-nav-row-main">
+              <h3>Уведомления</h3>
+              <p>Push и письма о событиях — позже, отдельными настройками.</p>
+            </div>
+            <span className="settings-nav-meta">Скоро</span>
+          </div>
+        </li>
+        <li>
+          <div className="settings-nav-row settings-nav-row--stack">
+            <div className="settings-nav-row-main">
+              <h3>Согласие на данные</h3>
+              <p>
+                Обработка сведений о здоровье — по согласию подопечного и в рамках политики сервиса. Отдельный
+                экран согласия будет добавлен позже.
+              </p>
+            </div>
+            <span className="settings-nav-meta">Позже</span>
+          </div>
+        </li>
+      </ul>
     </SectionCard>
   </div>
 )
@@ -284,7 +419,11 @@ export const CaregiverInviteCreatePage = () => {
   const relationships = useAuthStore((state) => state.relationships)
   const createInviteMutation = useCreateInviteMutation()
   const [latestCode, setLatestCode] = useState('')
-  const invites = allInvites.filter((invite) => invite.createdByUserId === session?.id)
+  const useHttp = useBackendApi
+  const remoteInvites = useCareInvitesRemoteQuery()
+  const invites = useHttp
+    ? (remoteInvites.data ?? [])
+    : allInvites.filter((invite) => invite.createdByUserId === session?.id)
 
   return (
     <div className="page-stack">
@@ -292,7 +431,7 @@ export const CaregiverInviteCreatePage = () => {
         <SectionHeader
           eyebrow="Приглашение"
           title="Код для подопечного"
-          description="Создайте код, передайте его пожилому человеку — он сможет присоединиться к вашей семейной заботе."
+          description="Код для входа подопечного в вашу сеть заботы."
         />
         <div className="button-row wrap-row">
           <ActionButton
@@ -324,7 +463,7 @@ export const CaregiverInviteCreatePage = () => {
           <SectionHeader
             eyebrow="Коды"
             title="Недавние приглашения"
-            description="Список созданных вами кодов. При работе через сервер данные будут подтягиваться автоматически."
+            description="Созданные вами коды (с сервера — актуальный список)."
           />
           <div className="list-stack">
             {invites.map((invite) => (
@@ -344,7 +483,7 @@ export const CaregiverInviteCreatePage = () => {
           <SectionHeader
             eyebrow="Связи"
             title="Кто с кем связан"
-            description="После принятия приглашения подопечный и родственник видят друг друга в приложении."
+            description="После принятия кода подопечный появляется в вашем списке."
           />
           <div className="list-stack">
             {relationships.map((relationship) => (

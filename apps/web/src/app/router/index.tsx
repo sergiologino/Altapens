@@ -88,7 +88,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <CaregiverDashboardPage /> },
       { path: 'seniors', element: <CaregiverSeniorsPage /> },
-      { path: 'seniors/ivan-ivanovich', element: <CaregiverSeniorDetailPage /> },
+      { path: 'seniors/:seniorId', element: <CaregiverSeniorDetailPage /> },
       { path: 'invites/new', element: <CaregiverInviteCreatePage /> },
       { path: 'medications/new', element: <CaregiverMedicationFormPage /> },
       { path: 'events', element: <CaregiverEventsPage /> },

@@ -20,16 +20,10 @@ import {
 } from '@altapens/api-contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/app/store/auth-store'
+import { apiBaseUrl, useBackendApi as useHttpAuthApi } from '@/shared/api/api-base'
+import { careQueryKeys } from '@/shared/api/care-client'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-/** Тот же origin (например nginx проксирует /api → backend) — база пустая, пути `/api/v1/...`. */
-const sameOriginApi = import.meta.env.VITE_API_SAME_ORIGIN === 'true'
-const rawBase = import.meta.env.VITE_API_BASE_URL
-const apiBaseUrl = sameOriginApi
-  ? ''
-  : (typeof rawBase === 'string' ? rawBase : '').replace(/\/$/, '')
-const useHttpAuthApi = sameOriginApi || Boolean(apiBaseUrl)
 
 export const authQueryKeys = {
   invite: (code: string) => ['auth', 'invite', code.toUpperCase()] as const,
@@ -164,21 +158,33 @@ const syncAuthSession = (session: LoginResponseDto['session'] | RegisterResponse
   useAuthStore.getState().setAuthSession(session, accessToken ?? null)
 }
 
-export const useLoginMutation = () =>
-  useMutation({
+const invalidateCareQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
+  void queryClient.invalidateQueries({ queryKey: ['senior-overview'] })
+  void queryClient.invalidateQueries({ queryKey: ['caregiver-dashboard'] })
+  void queryClient.invalidateQueries({ queryKey: careQueryKeys.invites })
+}
+
+export const useLoginMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
     mutationFn: authApi.login,
     onSuccess: (response) => {
       syncAuthSession(response.session, response.accessToken)
+      invalidateCareQueries(queryClient)
     },
   })
+}
 
-export const useRegisterMutation = () =>
-  useMutation({
+export const useRegisterMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
     mutationFn: authApi.register,
     onSuccess: (response) => {
       syncAuthSession(response.session, response.accessToken)
+      invalidateCareQueries(queryClient)
     },
   })
+}
 
 export const useCreateInviteMutation = () => {
   const queryClient = useQueryClient()
@@ -190,6 +196,7 @@ export const useCreateInviteMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: authQueryKeys.invite(invite.code),
       })
+      void queryClient.invalidateQueries({ queryKey: careQueryKeys.invites })
     },
   })
 }
@@ -212,6 +219,7 @@ export const useAcceptInviteMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: authQueryKeys.invite(variables.code),
       })
+      invalidateCareQueries(queryClient)
     },
   })
 }

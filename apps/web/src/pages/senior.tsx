@@ -1,8 +1,12 @@
 import { Outlet } from 'react-router-dom'
 import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
+import { SeniorVoiceShell } from '@/features/voice/SeniorVoiceShell'
 import { CheckinActions } from '@/features/senior-checkin/CheckinActions'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
+import { MedicationMemoryBlock } from '@/features/medications/MedicationMemoryBlock'
 import { useAuthStore } from '@/app/store/auth-store'
+import { useBackendApi } from '@/shared/api/api-base'
+import { useRecordMedicationIntakeMutation } from '@/shared/api/care-client'
 import {
   useCheckinsQuery,
   useMedicationHistoryQuery,
@@ -19,6 +23,7 @@ import {
   SectionHeader,
   ShellNav,
 } from '@/shared/ui/primitives'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 const seniorLinks = [
   { to: '/senior', label: 'Главная' },
@@ -41,7 +46,7 @@ const scaleClass: Record<'normal' | 'large' | 'x-large', string> = {
 }
 
 export const SeniorLayout = () => {
-  const { fontScale, highContrast } = useAccessibilityStore()
+  const { fontScale, highContrast, voiceEnabled } = useAccessibilityStore()
   const session = useAuthStore((state) => state.session)
   const logout = useAuthStore((state) => state.logout)
 
@@ -50,10 +55,11 @@ export const SeniorLayout = () => {
       <div className={scaleClass[fontScale]}>
         <AppShell
           role="senior"
+          mainClassName={voiceEnabled ? 'shell-main--voice-dock' : undefined}
           nav={
             <ShellNav
               title="Мой день"
-              subtitle="Крупные кнопки и простые слова — чтобы было спокойно пользоваться каждый день."
+              subtitle="Разделы приложения"
               links={seniorLinks}
               footer={
                 session ? (
@@ -72,6 +78,7 @@ export const SeniorLayout = () => {
           }
         >
           <FirstSessionTips role="senior" />
+          <SeniorVoiceShell />
           <Outlet />
         </AppShell>
       </div>
@@ -81,13 +88,14 @@ export const SeniorLayout = () => {
 
 export const SeniorHomePage = () => {
   const { data } = useSeniorOverviewQuery()
+  const { voiceEnabled } = useAccessibilityStore()
   if (!data) return null
 
   return (
     <div className="page-stack">
       <SectionCard tone="accent" className="hero-card senior-hero">
         <span className="eyebrow">Здравствуйте, {data.senior.fullName}</span>
-        <h2 className="hero-card-title">Сегодня всё под рукой: самочувствие, лекарства и помощь.</h2>
+        <h2 className="hero-card-title">Сегодня: самочувствие, лекарства, помощь</h2>
         <p className="hero-card-text">{data.todaySummary}</p>
         <div className="button-stack button-stack-mobile">
           <ActionButton className="senior-cta">Мне хорошо</ActionButton>
@@ -106,7 +114,7 @@ export const SeniorHomePage = () => {
           <SectionHeader
             eyebrow="Сегодня"
             title="Ближайшие дела"
-            description="Минимум текста, только важное на сегодня."
+            description="Слоты приёма на сегодня."
           />
           <div className="list-stack">
             {data.medications.map((medication) => (
@@ -114,6 +122,12 @@ export const SeniorHomePage = () => {
                 <div>
                   <strong>{medication.title}</strong>
                   <p>{medication.dosageText}</p>
+                  <MedicationMemoryBlock
+                    title={medication.title}
+                    dosageText={medication.dosageText}
+                    instructions={medication.instructions}
+                    hideSpeakButtons={!voiceEnabled}
+                  />
                 </div>
                 <div className="medication-meta">
                   <Pill tone={doseTone(medication.status)}>{medication.plannedTime}</Pill>
@@ -128,7 +142,7 @@ export const SeniorHomePage = () => {
         <SectionHeader
           eyebrow="Связь с близкими"
           title="Близкие на связи"
-          description="Они видят, что с вами всё в порядке или если нужна помощь — без давления и без слежки."
+          description="Сообщения от приложения и близких."
         />
         <div className="card-grid">
           {data.alerts.map((alert) => (
@@ -154,6 +168,20 @@ export const SeniorHomePage = () => {
 
 export const SeniorTodayPage = () => {
   const { data } = useSeniorOverviewQuery()
+  const { voiceEnabled } = useAccessibilityStore()
+  const useHttp = useBackendApi
+  const intake = useRecordMedicationIntakeMutation()
+
+  const postIntake = (doseId: string, status: 'taken' | 'missed' | 'snoozed') => {
+    if (!useHttp) return
+    const colon = doseId.lastIndexOf(':')
+    if (colon < 0) return
+    const medicationId = doseId.slice(0, colon)
+    const slotIndex = Number(doseId.slice(colon + 1))
+    if (!Number.isFinite(slotIndex)) return
+    intake.mutate({ medicationId, slotIndex, status })
+  }
+
   if (!data) return null
 
   return (
@@ -162,7 +190,7 @@ export const SeniorTodayPage = () => {
         <SectionHeader
           eyebrow="Лекарства"
           title="Напоминания на сегодня"
-          description="Когда пора принять лекарство, приложение напомнит. Подтверждение можно оставить или убрать — как вам удобнее."
+          description="Подтверждение приёма — по желанию, в настройках курса."
         />
         <div className="medication-card-list">
           {data.medications.map((dose) => (
@@ -174,17 +202,39 @@ export const SeniorTodayPage = () => {
                 </div>
                 <Pill tone={doseTone(dose.status)}>{dose.plannedTime}</Pill>
               </div>
+              <MedicationMemoryBlock
+                title={dose.title}
+                dosageText={dose.dosageText}
+                instructions={dose.instructions}
+                hideSpeakButtons={!voiceEnabled}
+              />
               <p className="medication-note">
                 {dose.confirmationRequired
                   ? 'Для этого приёма нужно одно нажатие подтверждения.'
                   : 'Подтверждение можно отключить, чтобы напоминание было мягче.'}
               </p>
               <div className="button-stack button-stack-mobile">
-                <ActionButton className="senior-cta">Принял</ActionButton>
-                <ActionButton tone="secondary" className="senior-cta">
+                <ActionButton
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'taken')}
+                >
+                  Принял
+                </ActionButton>
+                <ActionButton
+                  tone="secondary"
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'snoozed')}
+                >
                   Позже
                 </ActionButton>
-                <ActionButton tone="ghost" className="senior-cta">
+                <ActionButton
+                  tone="ghost"
+                  className="senior-cta"
+                  disabled={useHttp && intake.isPending}
+                  onClick={() => postIntake(dose.id, 'missed')}
+                >
                   Пропустить
                 </ActionButton>
               </div>
@@ -218,7 +268,7 @@ export const SeniorHistoryPage = () => {
           <SectionHeader
             eyebrow="Самочувствие"
             title="Как вы себя чувствовали"
-            description="Простые отметки по дням — чтобы вы и близкие помнили, как проходило время."
+            description="Отметки по дням."
           />
           <div className="list-stack">
             {checkins.data?.map((item) => (
@@ -242,7 +292,7 @@ export const SeniorHistoryPage = () => {
           <SectionHeader
             eyebrow="Приёмы"
             title="История лекарств"
-            description="Приняли или пропустили — всё видно простым списком, без таблиц и жаргона."
+            description="Статусы приёмов за период."
           />
           <div className="list-stack">
             {history.data?.map((dose) => (
@@ -279,9 +329,13 @@ export const SeniorProfilePage = () => {
         <SectionHeader
           eyebrow="Удобство"
           title="Настройки экрана"
-          description="Крупный шрифт, контраст и при желании озвучка — всё простыми переключателями."
+          description="Тема, шрифт, контраст, озвучка."
         />
         <div className="settings-grid">
+          <div className="mini-card">
+            <h3>Тема</h3>
+            <ThemeToggle />
+          </div>
           <div className="mini-card">
             <h3>Размер текста</h3>
             <div className="button-row wrap-row">
@@ -335,7 +389,7 @@ export const SeniorSosPage = () => (
       <SectionHeader
         eyebrow="Экстренная помощь"
         title="Если случилось беда"
-        description="После нажатия близкие получают срочное уведомление. Геолокацию можно подключить отдельно, если вы согласны."
+        description="Сигнал близким. Геолокация — отдельно, по согласию."
       />
       <div className="button-stack button-stack-mobile">
         <ActionButton tone="danger" className="senior-cta senior-sos-button">
@@ -355,7 +409,7 @@ export const SeniorAntiScamPage = () => (
       <SectionHeader
         eyebrow="Защита от обмана"
         title="Если звонок кажется подозрительным"
-        description="Крупные кнопки — чтобы быстро оборвать разговор и предупредить близких."
+        description="Быстрые действия при подозрительном звонке."
       />
       <div className="button-stack button-stack-mobile">
         <ActionButton tone="danger" className="senior-cta">

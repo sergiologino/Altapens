@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -72,6 +73,28 @@ public class ApiExceptionHandler {
             HttpServletRequest request
     ) {
         return build(HttpStatus.UNAUTHORIZED, exception.getMessage(), request, List.of());
+    }
+
+    /**
+     * Иначе {@link #handleGeneric} перехватывает {@link ResponseStatusException} и отдаёт 500 вместо реального статуса (например 502 от OpenAI TTS).
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleResponseStatus(
+            ResponseStatusException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        String msg = ex.getReason();
+        if (msg == null || msg.isBlank()) {
+            msg = ex.getMessage();
+        }
+        if (msg == null || msg.isBlank()) {
+            msg = status.getReasonPhrase();
+        }
+        return build(status, msg, request, List.of());
     }
 
     @ExceptionHandler(Exception.class)

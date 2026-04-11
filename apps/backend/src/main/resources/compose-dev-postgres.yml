@@ -1,0 +1,24 @@
+# PostgreSQL для профиля Spring Boot `dev` (spring-boot-docker-compose).
+# Подключается из application-dev.yml: spring.docker.compose.file=classpath:compose-dev-postgres.yml
+# Требуется Docker с поддержкой `docker compose` и свободный порт 5432 на хосте.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: altacare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - altapens_backend_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d altacare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  altapens_backend_dev_pgdata:

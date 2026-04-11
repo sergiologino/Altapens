@@ -29,20 +29,26 @@
   - `GET /api/v1/care/seniors`
   - `GET /api/v1/care/caregivers`
   - `GET /api/v1/care/relationships/{id}`
-- В backend добавлены Flyway миграции и JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`
+  - `GET/POST /api/v1/care/medications`, `GET /api/v1/care/medications/today-doses`, `POST /api/v1/care/medications/intake` (курс, слоты на день, фиксация приёма по слоту)
+  - `POST/GET /api/v1/care/checkins` (самочувствие подопечного; опекун — с `seniorUserId`)
+  - `GET /api/v1/care/timeline` (объединённая лента чек-инов и приёмов лекарств; опекун — с `seniorUserId`)
+- В backend добавлены Flyway миграции и JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`, `medications`, `wellbeing_checkins`, `medication_intakes`
 - В backend есть demo seed data для `Анна Смирнова` caregiver и `Иван Иванович` senior
 - Frontend auth client умеет работать через HTTP adapter при наличии `VITE_API_BASE_URL`, сохраняя fallback на local adapter
 - Реализованы базовые экраны и навигация для MVP-потоков:
   - senior: home, today, assistant, history, profile, SOS, anti-scam quick actions
   - caregiver: dashboard, seniors list, senior detail, invite create, medication form, events, AI, settings
 - Подключены `TanStack Query`, `Zustand`, `React Hook Form`, `Zod`
-- Данные UI работают через mock API/query слой, а auth/invite-flow — через typed auth client с локальным persisted adapter-слоем
+- При `VITE_API_BASE_URL` (или same-origin): care API для **сети заботы**, **лекарств** (в т.ч. фиксация приёма), **чек-инов самочувствия** и **ленты событий** (для опекуна — по первому подопечному из списка); история приёмов на экране «История» по-прежнему совпадает со слотами на сегодня до отдельного API истории; auth/invite-flow — typed client + локальный store
 - Backend integration tests на `auth` и `care_network` проходят на H2 test-profile
 - Дизайн-система использует кастомные theme tokens, парную типографику, многослойные тени и отдельные роли по visual tone
-- Сборка `npm run build:web` проходит успешно
+- Сборка `npm run build:web` и unit-тесты `npm run test:web` (Vitest, маппинг care-dashboard) проходят успешно
 - Сборка и тесты backend: из `apps/backend` через Gradle Wrapper (`gradlew` / `gradlew.bat`), дистрибутив Gradle в репозиторий не коммитится
-- Runtime backend в обычном профиле требует реальную PostgreSQL базу `altacare`; отдельный in-memory dev-profile пока не добавлен
-- В корне репозитория добавлены `RUN_LOCAL.md` (инструкция локального запуска на Windows) и опциональный `docker-compose.yml` только для PostgreSQL
+- Runtime backend требует PostgreSQL `altacare`: профиль **`local`** — подключение к уже запущенной БД; профиль **`dev`** — автозапуск PostgreSQL в Docker через `spring-boot-docker-compose` и `compose-dev-postgres.yml` на classpath (см. `RUN_LOCAL.md`); интеграционные тесты по-прежнему на H2
+- В корне репозитория: `RUN_LOCAL.md`, корневой `docker-compose.yml` (полный стек или только postgres); для JVM из IDE — профиль `dev` и compose-файл в `apps/backend/src/main/resources/`
+
+## Планируемое (спецификации)
+- **Голосовой режим senior (двусторонний):** реализован базовый контур в `apps/web/src/features/voice/` (TTS/STT, парсер фраз `voice-intents`, панель `SeniorVoiceShell` в layout senior); подробности и этапы расширения — `docs/ai/specs/voice-mode-senior.md`. **MCP/внешние источники** — позже, после стабилизации голоса (см. §11 той же спецификации).
 
 ## Что поддерживать в актуальном состоянии
 - фактическую структуру backend/frontend/landing

@@ -1,0 +1,15 @@
+# Скопируйте в env_backend.txt или задайте переменные в Run Configuration IDEA (не коммитьте секреты).
+# См. RUN_LOCAL.md
+
+DB_URL=jdbc:postgresql://localhost:5432/altacare
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+JWT_SECRET=local-dev-secret-at-least-32-chars-long!!
+SERVER_PORT=8080
+
+AI_INTEGRATION_BASE_URL=http://localhost:8091
+AI_INTEGRATION_API_KEY=your_client_x_api_key_from_noteapp
+
+OPENAI_TTS_API_KEY=sk-your-openai-key
+OPENAI_TTS_MODEL=tts-1-hd
+OPENAI_TTS_VOICE=nova

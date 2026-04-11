@@ -15,6 +15,8 @@ import ru.altacare.backend.modules.care_network.domain.enums.CareInviteStatus;
 import ru.altacare.backend.modules.care_network.domain.enums.CareRelationshipStatus;
 import ru.altacare.backend.modules.care_network.infrastructure.persistence.CareInviteRepository;
 import ru.altacare.backend.modules.care_network.infrastructure.persistence.CareRelationshipRepository;
+import ru.altacare.backend.modules.medications.domain.entity.MedicationEntity;
+import ru.altacare.backend.modules.medications.infrastructure.persistence.MedicationRepository;
 import ru.altacare.backend.modules.profiles.domain.entity.CaregiverProfileEntity;
 import ru.altacare.backend.modules.profiles.domain.entity.SeniorProfileEntity;
 import ru.altacare.backend.modules.profiles.infrastructure.persistence.CaregiverProfileRepository;
@@ -34,6 +36,7 @@ public class DemoDataInitializer {
     private final CaregiverProfileRepository caregiverProfileRepository;
     private final CareInviteRepository careInviteRepository;
     private final CareRelationshipRepository careRelationshipRepository;
+    private final MedicationRepository medicationRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
@@ -74,6 +77,18 @@ public class DemoDataInitializer {
             relationship.setInvitedAt(Instant.now().minus(3, ChronoUnit.DAYS));
             relationship.setAcceptedAt(Instant.now().minus(3, ChronoUnit.DAYS));
             careRelationshipRepository.save(relationship);
+
+            MedicationEntity demoMed = new MedicationEntity();
+            demoMed.setId(UUID.randomUUID());
+            demoMed.setSeniorProfile(ivanProfile);
+            demoMed.setTitle("Конкор");
+            demoMed.setDosageText("5 мг");
+            demoMed.setInstructions("Утром, запить водой.");
+            demoMed.setExactTimes("09:00, 20:00");
+            demoMed.setDaysOfWeek("Ежедневно");
+            demoMed.setConfirmationRequired(true);
+            demoMed.setNotifyOnMissed(true);
+            medicationRepository.save(demoMed);
 
             CareInviteEntity invite = new CareInviteEntity();
             invite.setId(UUID.randomUUID());

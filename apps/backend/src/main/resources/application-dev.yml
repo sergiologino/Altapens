@@ -1,0 +1,14 @@
+# Профиль `dev`: PostgreSQL поднимается через Docker Compose (spring-boot-docker-compose).
+# Подключаются настройки `local` (show-sql и т.д.), см. application-local.yml.
+# Compose-файл на classpath — чтобы `bootRun`/IDE работали с любой рабочей директорией модуля.
+
+spring:
+  profiles:
+    include: local
+  docker:
+    compose:
+      enabled: true
+      file: classpath:compose-dev-postgres.yml
+      lifecycle-management: start-and-stop
+      readiness:
+        timeout: 2m

@@ -13,6 +13,8 @@
 - JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`
 - demo seed data для `Анна Смирнова` caregiver и `Иван Иванович` senior
 - integration tests на критические сценарии auth/invite flow
+- модуль **medications** + **wellbeing_checkins** / **medication_intakes**: курсы и фиксация приёма по слоту на календарную дату в TZ подопечного; чек-ины самочувствия; `GET /care/timeline` объединяет события
+- профиль **`dev`**: `spring-boot-docker-compose` + `compose-dev-postgres.yml` (classpath) — автозапуск PostgreSQL 16 при локальном `bootRun` (см. `RUN_LOCAL.md`)
 
 ## Контракты и интеграция
 - backend ориентируется на DTO-контракты из `packages/api-contracts`
@@ -20,12 +22,10 @@
 - текущие endpoints публикуются под `/api/v1/auth/*` и `/api/v1/care/*`
 
 ## Ограничения сейчас
-- основной runtime-профиль ожидает реальную PostgreSQL базу `altacare`
-- отдельный in-memory dev-profile для ручного локального запуска еще не добавлен
+- основной runtime-профиль ожидает реальную PostgreSQL базу `altacare` (профиль `dev` поднимает её в Docker автоматически; отдельного in-memory H2 для «ручного» dev без Docker нет)
 - нет refresh-token/session blacklist логики
-- нет medication/check-in/SOS/notifications/AI domain endpoints
+- нет SOS/notifications/AI domain endpoints; история приёмов за прошлые дни без отдельного API — только «сегодня» и лента недавних intakes
 
 ## Следующие логичные шаги
-- добавить dev-profile или docker-compose для локального PostgreSQL старта в один шаг
 - перевести senior/caregiver data screens на реальные care endpoints вместо mock data
 - реализовать следующие backend домены: medication, check-ins, SOS, notifications, anti-scam, ai_assistant

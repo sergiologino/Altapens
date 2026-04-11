@@ -1,6 +1,10 @@
 spring:
   application:
     name: altacare-backend
+  docker:
+    compose:
+      # Включается только в профиле `dev` (см. application-dev.yml), чтобы `local` и тесты не трогали Docker.
+      enabled: false
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/altacare}
     username: ${DB_USERNAME:postgres}
@@ -43,3 +47,18 @@ app:
     jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
     issuer: altacare-backend
     access-token-ttl: PT12H
+  # Вызовы noteapp-ai-integration (заголовок X-API-Key = api-key клиента из БД интеграции).
+  ai-integration:
+    base-url: ${AI_INTEGRATION_BASE_URL:http://localhost:8091}
+    api-key: ${AI_INTEGRATION_API_KEY:}
+    connect-timeout-ms: ${AI_INTEGRATION_CONNECT_TIMEOUT_MS:10000}
+    read-timeout-ms: ${AI_INTEGRATION_READ_TIMEOUT_MS:120000}
+    default-chat-network: ${AI_INTEGRATION_DEFAULT_NETWORK:}
+    request-tts-from-integration: ${AI_INTEGRATION_REQUEST_TTS:false}
+  # Нейро-озвучка (OpenAI TTS) — естественнее Web Speech; ключ только на сервере.
+  tts:
+    openai:
+      api-key: ${OPENAI_TTS_API_KEY:}
+      organization-id: ${OPENAI_ORGANIZATION:}
+      model: ${OPENAI_TTS_MODEL:tts-1-hd}
+      voice: ${OPENAI_TTS_VOICE:nova}
