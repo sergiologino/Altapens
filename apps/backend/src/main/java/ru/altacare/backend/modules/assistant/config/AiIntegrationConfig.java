@@ -17,8 +17,8 @@ public class AiIntegrationConfig {
             AiIntegrationProperties properties
     ) {
         return builder
-                .setConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
-                .setReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()))
+                .connectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
+                .readTimeout(Duration.ofMillis(properties.getReadTimeoutMs()))
                 .build();
     }
 }
