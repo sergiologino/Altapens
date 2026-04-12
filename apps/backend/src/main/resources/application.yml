@@ -63,6 +63,10 @@ app:
     default-chat-network: ${AI_INTEGRATION_DEFAULT_NETWORK:}
     default-speech-synthesis-network: ${AI_INTEGRATION_DEFAULT_SPEECH_NETWORK:}
     request-tts-from-integration: ${AI_INTEGRATION_REQUEST_TTS:false}
+    # Привязка клиента к user_accounts интеграции (POST .../assign-user), как у других приложений; нужен пароль admin.
+    admin-username: ${AI_INTEGRATION_ADMIN_USERNAME:admin}
+    admin-password: ${AI_INTEGRATION_ADMIN_PASSWORD:}
+    owner-email: ${AI_INTEGRATION_OWNER_EMAIL:admin@example.com}
   # Нейро-озвучка через noteapp-ai-integration (speech_synthesis → OpenAI TTS в интеграции). Ключ OpenAI только там.
   tts:
     openai:

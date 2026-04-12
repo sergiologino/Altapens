@@ -20,6 +20,8 @@ import ru.altacare.backend.modules.assistant.config.AiIntegrationProperties;
 @RequiredArgsConstructor
 public class AiIntegrationClient {
 
+    private final AiIntegrationOwnerBootstrap ownerBootstrap;
+
     private static final String SYSTEM_PROMPT = """
             Ты дружелюбный помощник для пожилого человека в приложении бытовых подсказок AltaCare. \
             Не выдавай медицинские диагнозы и не назначай лечение; при симптомах советуй обратиться к врачу. \
@@ -32,6 +34,7 @@ public class AiIntegrationClient {
         if (!properties.isConfigured()) {
             throw new IllegalStateException("AI integration is not configured (set AI_INTEGRATION_BASE_URL and AI_INTEGRATION_API_KEY)");
         }
+        ownerBootstrap.ensureLinked();
 
         String base = properties.getBaseUrl().replaceAll("/+$", "");
         String url = base + "/api/ai/process";
@@ -105,6 +108,7 @@ public class AiIntegrationClient {
             throw new IllegalStateException(
                     "AI integration is not configured (set AI_INTEGRATION_BASE_URL and AI_INTEGRATION_API_KEY)");
         }
+        ownerBootstrap.ensureLinked();
 
         String trimmed = text != null ? text.trim() : "";
         if (trimmed.isEmpty()) {
