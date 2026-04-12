@@ -1,12 +1,18 @@
-# Сборка без wrapper: образ Gradle качает зависимости по build.gradle
+# Сборка через Gradle Wrapper (та же версия, что в репозитории) + gradle.properties.
 FROM gradle:8.11.1-jdk17-alpine AS build
 WORKDIR /home/gradle/project
 
-COPY build.gradle settings.gradle ./
+ENV GRADLE_OPTS="-Xmx1536m -XX:MaxMetaspaceSize=384m -Dfile.encoding=UTF-8"
+ENV LANG=C.UTF-8
+
+COPY build.gradle settings.gradle gradle.properties ./
 COPY gradle ./gradle
+COPY gradlew ./
+RUN chmod +x gradlew
+
 COPY src ./src
 
-RUN gradle bootJar -x test --no-daemon --no-watch-fs
+RUN ./gradlew bootJar -x test --no-daemon --no-watch-fs
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
