@@ -6,6 +6,8 @@ import java.util.Optional;
 
 public final class AiProcessResponseParser {
 
+    public record SpeechSynthesisPayload(String audioBase64, String format) {}
+
     private AiProcessResponseParser() {}
 
     @SuppressWarnings("unchecked")
@@ -51,5 +53,26 @@ public final class AiProcessResponseParser {
             return Optional.empty();
         }
         return Optional.of(b64.toString());
+    }
+
+    /**
+     * Ответ {@code speech_synthesis} из noteapp-ai-integration: {@code audioBase64}, {@code format} (mp3, wav, …).
+     */
+    @SuppressWarnings("unchecked")
+    public static Optional<SpeechSynthesisPayload> extractSpeechSynthesis(Map<String, Object> topLevel) {
+        if (topLevel == null) {
+            return Optional.empty();
+        }
+        Object responseObj = topLevel.get("response");
+        if (!(responseObj instanceof Map<?, ?> neural)) {
+            return Optional.empty();
+        }
+        Object b64 = neural.get("audioBase64");
+        if (b64 == null || b64.toString().isBlank()) {
+            return Optional.empty();
+        }
+        Object format = neural.get("format");
+        String fmt = format != null ? format.toString().trim() : "mp3";
+        return Optional.of(new SpeechSynthesisPayload(b64.toString(), fmt));
     }
 }

@@ -95,4 +95,73 @@ public class AiIntegrationClient {
             throw new RestClientException(e.getMessage(), e);
         }
     }
+
+    /**
+     * Синтез речи через интеграцию ({@code requestType = speech_synthesis}), в т.ч. OpenAI TTS на стороне интеграции.
+     */
+    public AiProcessResponseParser.SpeechSynthesisPayload synthesizeSpeech(
+            UUID userId, String text, String networkNameOverride, String voice, String modelOverride) {
+        if (!properties.isConfigured()) {
+            throw new IllegalStateException(
+                    "AI integration is not configured (set AI_INTEGRATION_BASE_URL and AI_INTEGRATION_API_KEY)");
+        }
+
+        String trimmed = text != null ? text.trim() : "";
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("text is required");
+        }
+
+        String base = properties.getBaseUrl().replaceAll("/+$", "");
+        String url = base + "/api/ai/process";
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("input", trimmed);
+        payload.put("response_format", "mp3");
+        if (voice != null && !voice.isBlank()) {
+            payload.put("voice", voice.trim());
+        }
+        if (modelOverride != null && !modelOverride.isBlank()) {
+            payload.put("model", modelOverride.trim());
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", userId.toString());
+        body.put("requestType", "speech_synthesis");
+        String net = networkNameOverride != null && !networkNameOverride.isBlank()
+                ? networkNameOverride
+                : properties.getDefaultSpeechSynthesisNetwork();
+        if (net != null && !net.isBlank()) {
+            body.put("networkName", net);
+        }
+        body.put("payload", payload);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", properties.getApiKey());
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<Map<String, Object>> response = aiIntegrationRestTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {});
+            Map<String, Object> top = response.getBody();
+            if (top == null) {
+                throw new RestClientException("Empty response from AI integration");
+            }
+            Object status = top.get("status");
+            if ("failed".equals(status)) {
+                Object err = top.get("errorMessage");
+                throw new RestClientException(err != null ? err.toString() : "AI speech synthesis failed");
+            }
+            return AiProcessResponseParser.extractSpeechSynthesis(top)
+                    .orElseThrow(() -> new RestClientException("No audio in AI integration speech response"));
+        } catch (RestClientException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RestClientException(e.getMessage(), e);
+        }
+    }
 }

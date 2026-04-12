@@ -3,60 +3,47 @@ package ru.altacare.backend.modules.assistant.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Нейро-озвучка через OpenAI Audio API ({@code /v1/audio/speech}) — естественнее, чем Web Speech в браузере.
+ * Параметры озвучки для запроса {@code speech_synthesis} в noteapp-ai-integration
+ * (модель и голос задаются в БД интеграции; здесь — переопределения в payload).
  */
 @ConfigurationProperties(prefix = "app.tts")
 public class NeuralTtsProperties {
 
-    private OpenAi openai = new OpenAi();
+    private PayloadDefaults defaults = new PayloadDefaults();
 
-    public boolean isNeuralEnabled() {
-        String k = openai.getApiKey();
-        return k != null && !k.isBlank();
+    public PayloadDefaults getDefaults() {
+        return defaults;
     }
 
-    public OpenAi getOpenai() {
-        return openai;
+    public void setDefaults(PayloadDefaults defaults) {
+        this.defaults = defaults != null ? defaults : new PayloadDefaults();
     }
 
-    public void setOpenai(OpenAi openai) {
-        this.openai = openai != null ? openai : new OpenAi();
+    /** Совместимость с прежним путём {@code app.tts.openai.*} в yaml. */
+    public PayloadDefaults getOpenai() {
+        return defaults;
     }
 
-    public static class OpenAi {
-        /** API key OpenAI (только сервер; не класть во фронт). */
-        private String apiKey = "";
-        /** Необязательно: идентификатор организации OpenAI (заголовок OpenAI-Organization). */
-        private String organizationId = "";
-        /** {@code tts-1} быстрее, {@code tts-1-hd} качественнее. */
-        private String model = "tts-1-hd";
+    public void setOpenai(PayloadDefaults openai) {
+        this.defaults = openai != null ? openai : new PayloadDefaults();
+    }
+
+    public static class PayloadDefaults {
         /**
-         * Голос: alloy, echo, fable, onyx, nova, shimmer — мультиязычные, для русского обычно хороши nova/shimmer.
+         * Переопределение модели TTS в payload (если пусто — берётся modelName нейросети в интеграции, напр. tts-1).
+         */
+        private String model = "";
+        /**
+         * Голос OpenAI TTS: alloy, echo, fable, onyx, nova, shimmer и т.д.
          */
         private String voice = "nova";
-
-        public String getApiKey() {
-            return apiKey;
-        }
-
-        public void setApiKey(String apiKey) {
-            this.apiKey = apiKey != null ? apiKey.trim() : "";
-        }
-
-        public String getOrganizationId() {
-            return organizationId;
-        }
-
-        public void setOrganizationId(String organizationId) {
-            this.organizationId = organizationId != null ? organizationId.trim() : "";
-        }
 
         public String getModel() {
             return model;
         }
 
         public void setModel(String model) {
-            this.model = model;
+            this.model = model != null ? model.trim() : "";
         }
 
         public String getVoice() {
@@ -64,7 +51,7 @@ public class NeuralTtsProperties {
         }
 
         public void setVoice(String voice) {
-            this.voice = voice;
+            this.voice = voice != null ? voice.trim() : "";
         }
     }
 }

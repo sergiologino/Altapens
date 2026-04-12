@@ -24,6 +24,12 @@ public class AiIntegrationProperties {
     private String defaultChatNetwork = "";
 
     /**
+     * Имя нейросети для синтеза речи (тип {@code speech_synthesis}), например {@code openai-tts}.
+     * Пусто — автовыбор среди доступных клиенту сетей с типом speech_synthesis.
+     */
+    private String defaultSpeechSynthesisNetwork = "";
+
+    /**
      * Передавать metadata synthesizeTts в интеграцию (нужен отдельный TTS-сервис на стороне интеграции).
      */
     private boolean requestTtsFromIntegration = false;
@@ -70,6 +76,14 @@ public class AiIntegrationProperties {
 
     public void setDefaultChatNetwork(String defaultChatNetwork) {
         this.defaultChatNetwork = defaultChatNetwork;
+    }
+
+    public String getDefaultSpeechSynthesisNetwork() {
+        return defaultSpeechSynthesisNetwork;
+    }
+
+    public void setDefaultSpeechSynthesisNetwork(String defaultSpeechSynthesisNetwork) {
+        this.defaultSpeechSynthesisNetwork = defaultSpeechSynthesisNetwork;
     }
 
     public boolean isRequestTtsFromIntegration() {

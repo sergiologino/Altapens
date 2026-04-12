@@ -9,7 +9,8 @@ SERVER_PORT=8080
 
 AI_INTEGRATION_BASE_URL=http://localhost:8091
 AI_INTEGRATION_API_KEY=your_client_x_api_key_from_noteapp
-
-OPENAI_TTS_API_KEY=sk-your-openai-key
-OPENAI_TTS_MODEL=tts-1-hd
-OPENAI_TTS_VOICE=nova
+# Необязательно: имя нейросети speech_synthesis в интеграции (напр. openai-tts); иначе — автовыбор по типу.
+# AI_INTEGRATION_DEFAULT_SPEECH_NETWORK=openai-tts
+# Переопределение голоса/модели в payload к интеграции (ключ OpenAI задаётся только в noteapp-ai-integration).
+# ALTAPENS_TTS_VOICE=nova
+# ALTAPENS_TTS_MODEL=
