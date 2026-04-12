@@ -117,7 +117,8 @@ async function tryBackendNeuralTts(text: string): Promise<boolean> {
     const { audioBase64, mimeType } = await postNeuralSpeech(text.trim())
     await playAudioBase64(audioBase64, mimeType)
     return true
-  } catch {
+  } catch (e) {
+    console.warn('[neural-speech] fallback to Web Speech:', e)
     return false
   }
 }

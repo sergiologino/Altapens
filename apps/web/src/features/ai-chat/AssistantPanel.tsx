@@ -47,7 +47,7 @@ export const AssistantPanel = ({
     void speak(lastAssistantText)
   }, [lastAssistantText])
 
-  /** После ответа помощника — вывод на устройстве: WAV с API или Web Speech по тексту. */
+  /** После ответа помощника: при VITE_NEURAL_TTS — OpenAI TTS через backend; иначе WAV из интеграции (Qwen) или Web Speech. */
   useEffect(() => {
     if (!voiceEnabled) {
       return
@@ -64,8 +64,9 @@ export const AssistantPanel = ({
     }
     spokenAssistantIdsRef.current.add(lastAssistant.id)
 
+    const preferOpenAiNeural = import.meta.env.VITE_NEURAL_TTS === 'true'
     const audio = lastAssistant.role === 'assistant' ? lastAssistant.audioBase64Wav : undefined
-    if (audio && audio.trim()) {
+    if (!preferOpenAiNeural && audio && audio.trim()) {
       void playWavBase64(audio).catch(() => {
         if (isSpeechSynthesisSupported()) {
           void speak(lastAssistant.content)
@@ -143,7 +144,8 @@ export const AssistantPanel = ({
                 try {
                   if (canUseLlmProxy) {
                     const result = await postAssistantChat(userText)
-                    pushLocalReply(result.content, result.audioBase64Wav)
+                    const skipIntegrationWav = import.meta.env.VITE_NEURAL_TTS === 'true'
+                    pushLocalReply(result.content, skipIntegrationWav ? undefined : result.audioBase64Wav)
                   } else {
                     pushLocalReply(lifeAdviceReply(userText))
                   }

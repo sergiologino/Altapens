@@ -7,8 +7,13 @@ DB_PASSWORD=postgres
 JWT_SECRET=local-dev-secret-at-least-32-chars-long!!
 SERVER_PORT=8080
 
+# Можно без схемы: localhost → http, удалённый хост (как в проде) → https.
 AI_INTEGRATION_BASE_URL=http://localhost:8091
 AI_INTEGRATION_API_KEY=your_client_x_api_key_from_noteapp
+# Пароль админа интеграции (тот же, что admin/admin в UI) — для автопривязки клиента к admin@example.com без правок БД интеграции.
+AI_INTEGRATION_ADMIN_PASSWORD=admin
+# AI_INTEGRATION_ADMIN_USERNAME=admin
+# AI_INTEGRATION_OWNER_EMAIL=admin@example.com
 # Необязательно: имя нейросети speech_synthesis в интеграции (напр. openai-tts); иначе — автовыбор по типу.
 # AI_INTEGRATION_DEFAULT_SPEECH_NETWORK=openai-tts
 # Переопределение голоса/модели в payload к интеграции (ключ OpenAI задаётся только в noteapp-ai-integration).
