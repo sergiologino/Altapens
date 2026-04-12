@@ -230,7 +230,7 @@ const neuralSpeechResponseSchema = z.object({
   mimeType: z.string(),
 })
 
-/** OpenAI TTS через backend (нужны OPENAI_TTS_* на сервере и VITE_NEURAL_TTS на фронте). */
+/** Нейро-озвучка через AltaPens backend → noteapp-ai-integration (VITE_NEURAL_TTS и настроенный AI_INTEGRATION_* на сервере). */
 export async function postNeuralSpeech(text: string): Promise<{ audioBase64: string; mimeType: string }> {
   const response = await fetch(`${apiBaseUrl}/api/v1/care/assistant/neural-speech`, {
     method: 'POST',

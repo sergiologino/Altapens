@@ -61,11 +61,10 @@ app:
     connect-timeout-ms: ${AI_INTEGRATION_CONNECT_TIMEOUT_MS:10000}
     read-timeout-ms: ${AI_INTEGRATION_READ_TIMEOUT_MS:120000}
     default-chat-network: ${AI_INTEGRATION_DEFAULT_NETWORK:}
+    default-speech-synthesis-network: ${AI_INTEGRATION_DEFAULT_SPEECH_NETWORK:}
     request-tts-from-integration: ${AI_INTEGRATION_REQUEST_TTS:false}
-  # Нейро-озвучка (OpenAI TTS) — естественнее Web Speech; ключ только на сервере.
+  # Нейро-озвучка через noteapp-ai-integration (speech_synthesis → OpenAI TTS в интеграции). Ключ OpenAI только там.
   tts:
     openai:
-      api-key: ${OPENAI_TTS_API_KEY:}
-      organization-id: ${OPENAI_ORGANIZATION:}
-      model: ${OPENAI_TTS_MODEL:tts-1-hd}
-      voice: ${OPENAI_TTS_VOICE:nova}
+      model: ${ALTAPENS_TTS_MODEL:${OPENAI_TTS_MODEL:}}
+      voice: ${ALTAPENS_TTS_VOICE:${OPENAI_TTS_VOICE:nova}}

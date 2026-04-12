@@ -102,7 +102,7 @@ export function playWavBase64(base64: string): Promise<void> {
   return playAudioBase64(base64, 'audio/wav')
 }
 
-async function tryOpenAiNeuralTts(text: string): Promise<boolean> {
+async function tryBackendNeuralTts(text: string): Promise<boolean> {
   if (import.meta.env.VITE_NEURAL_TTS !== 'true') {
     return false
   }
@@ -128,7 +128,7 @@ export async function speak(text: string, opts?: { rate?: number; pitch?: number
   }
 
   const trimmed = text.trim()
-  if (await tryOpenAiNeuralTts(trimmed)) {
+  if (await tryBackendNeuralTts(trimmed)) {
     return
   }
 
