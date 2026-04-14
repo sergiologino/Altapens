@@ -1,5 +1,6 @@
 # Полный стек для проверки UI/UX и API: PostgreSQL + Spring Boot + nginx (статика + прокси /api).
-# Приложение в браузере: http://localhost:3080  (один origin, без CORS к backend).
+# Веб-приложение (SPA): http://localhost:3080 — один origin с API, без CORS к backend.
+# Лендинг Next.js (SSR): http://localhost:3081 — задайте NEXT_PUBLIC_APP_URL=http://localhost:3080, чтобы кнопки вели в SPA.
 # Прямой доступ к API/Swagger (опционально): http://localhost:8090/swagger-ui/index.html
 #
 # Если порт 5432 занят локальным Postgres — смените проброс, например "5433:5432",
@@ -59,6 +60,19 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+  landing:
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3081}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3080}
+    container_name: altapens-landing
+    ports:
+      - "3081:3000"
+    environment:
+      NODE_ENV: production
 
   # Опционально: Qwen3-TTS на GPU (отдельный профиль, не мешает основному стеку).
   # Запуск: docker compose --profile tts up -d tts-qwen

@@ -61,7 +61,6 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  alternates: { canonical: '/' },
   category: 'health',
 }
 
@@ -76,7 +75,7 @@ function JsonLd() {
     knowsAbout: [
       'забота о пожилых людях',
       'цифровая поддержка пенсионеров',
-      'семейная опека',
+      'связь семьи с родителями',
       'напоминания о лекарствах',
     ],
   }
@@ -98,10 +97,10 @@ function JsonLd() {
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'RUB' },
     description: seo.description,
     featureList: [
-      'Напоминания о приёме лекарств',
-      'Чек-ины самочувствия для семьи',
+      'Напоминания о приёме лекарств по времени',
+      'Короткий отчёт о самочувствии для родных',
       'Голосовой и текстовый умный помощник',
-      'Связь опекуна с подопечным',
+      'Общая лента событий для близких и пенсионера',
     ],
   }
   return (

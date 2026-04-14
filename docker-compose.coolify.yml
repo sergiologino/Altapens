@@ -44,5 +44,21 @@ services:
       - traefik.http.routers.pens.entrypoints=http
       - traefik.http.services.pens.loadbalancer.server.port=80
 
+  # SSR-лендинг: задайте DNS на этот хост и при необходимости поправьте имя в labels.
+  landing:
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.pens.altacod.com}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://pens.altacod.com}
+    expose:
+      - "3000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pens-landing.rule=Host(`www.pens.altacod.com`)
+      - traefik.http.routers.pens-landing.entrypoints=http
+      - traefik.http.services.pens-landing.loadbalancer.server.port=3000
+
 volumes:
   pens_pgdata:

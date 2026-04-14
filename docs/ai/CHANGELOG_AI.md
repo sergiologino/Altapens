@@ -2,6 +2,8 @@
 
 ## 2026-04-14
 - **Landing:** добавлен `apps/landing` (Next.js 15 App Router) — маркетинговая главная с hero `landing_picture.webp`, адаптивная вёрстка, `sitemap.ts` / `robots.ts`, метаданные и JSON-LD для поисковиков и GEO; корневые скрипты `dev:landing`, `build:landing`; `convert-hero` для пересборки webp из `landing_source.png`
+- **Landing (тексты и обзор):** упрощён язык для аудитории; убран видимый блок про SEO; обзор экранов с PNG-заглушками в `public/placeholders/`; маршруты `/dlya-pensionerov`, `/dlya-blizkih` с отдельным `metadata` (`seo-copy.ts`); скрытый GEO-текст `.geoHidden`; общий хедер/футер
+- **Landing UX/Docker:** модальный просмотр иллюстраций (`LightboxImage`); иллюстрации на подстраницах; `docker/landing.Dockerfile`, сервис `landing` в compose (локально `:3081`), Coolify — отдельный host для лендинга
 - **Web SEO:** `index.html` (ru, title/description/keywords/OG), `public/robots.txt` и `public/sitemap.xml`, `HelmetProvider` + `DocumentHead` с каноническими URL и `noindex` для кабинетов senior/caregiver; `apps/web/.env.example`
 - **Яндекс.Метрика:** счётчик `108547150` в лендинге (`next/script`, опция `ssr`) и в веб-приложении; переменные отключения в `.env.example`
 
