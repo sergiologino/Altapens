@@ -66,6 +66,18 @@
 - Решение: `apps/web/src/shared/api/care-client.ts` (fetch + zod из `api-contracts`), чистые функции в `care-dashboard.ts`, подстановка демо-фрагментов из `mock-care-data.ts` для отсутствующих доменов; переключение по тем же `VITE_*`, что и auth
 - Последствия: при появлении medication/check-in API маппинг и контракты расширяются без смены маршрутов и оболочек senior/caregiver
 
+## DEC-014: Яндекс.Метрика на лендинге и в web
+- Статус: Accepted
+- Контекст: нужна веб-аналитика без ожидания Google Tag
+- Решение: общий счётчик `108547150`; лендинг — клиентский компонент + `next/script` (`afterInteractive`); SPA — вставка сниппета в `useEffect` с защитой от повторной вставки; отключение через `NEXT_PUBLIC_YANDEX_METRIKA_DISABLED` / `VITE_YANDEX_METRIKA_DISABLED`
+- Последствия: Google Tag добавляется отдельно позже; при смене счётчика обновить константы по умолчанию или только env
+
+## DEC-013: Лендинг на Next.js (App Router) с SSR/SSG для SEO
+- Статус: Accepted
+- Контекст: нужен отдельный маркетинговый контур с полноценной индексацией (sitemap, robots, метаданные, структурированные данные для GEO/ИИ-поиска), без смешения с SPA `apps/web`
+- Решение: разместить лендинг в `apps/landing` на Next.js 15 с `metadata`, `app/sitemap.ts`, `app/robots.ts`, JSON-LD в `layout`; статические ассеты в `public/`; канонический origin через `NEXT_PUBLIC_SITE_URL`; ссылка в приложение через `NEXT_PUBLIC_APP_URL`
+- Последствия: прод-сборка лендинга — `npm run build --workspace landing`; локально порт `3001` по умолчанию; шрифты Google: заголовки Fraunces (latin/latin-ext), текст Manrope с кириллицей
+
 ## DEC-009: Локальный PostgreSQL для разработки через профиль `dev`
 - Статус: Accepted
 - Контекст: разработчику нужен предсказуемый запуск backend без ручного создания БД и без коммита тяжёлого Gradle; корневой `docker compose` уже есть, но не покрывает сценарий «только JVM + Gradle из IDE»

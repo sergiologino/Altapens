@@ -1,5 +1,10 @@
 # AI Changelog
 
+## 2026-04-14
+- **Landing:** добавлен `apps/landing` (Next.js 15 App Router) — маркетинговая главная с hero `landing_picture.webp`, адаптивная вёрстка, `sitemap.ts` / `robots.ts`, метаданные и JSON-LD для поисковиков и GEO; корневые скрипты `dev:landing`, `build:landing`; `convert-hero` для пересборки webp из `landing_source.png`
+- **Web SEO:** `index.html` (ru, title/description/keywords/OG), `public/robots.txt` и `public/sitemap.xml`, `HelmetProvider` + `DocumentHead` с каноническими URL и `noindex` для кабинетов senior/caregiver; `apps/web/.env.example`
+- **Яндекс.Метрика:** счётчик `108547150` в лендинге (`next/script`, опция `ssr`) и в веб-приложении; переменные отключения в `.env.example`
+
 ## 2026-04-10
 - Отдельный проект **Mobile_version** (Capacitor 7): `lib/`, `scripts/`, `www/`, Vitest, CI workflow; сборка web из AltaPens через `build:web:mobile` (`--base ./`); скрипт в корневом `package.json` AltaPens
 

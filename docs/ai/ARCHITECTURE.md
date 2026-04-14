@@ -15,6 +15,7 @@
 
 - `apps/backend` — Spring Boot modular monolith backend
 - `apps/web` — React + TypeScript + Vite приложение
+- `apps/landing` — Next.js (App Router) маркетинговый лендинг, отдельная сборка и деплой
 - `packages/api-contracts` — типизированные frontend-ready контракты для auth/care flows
 - `packages/design-tokens` — централизованные токены темы, типографики, теней, motion и layering
 - `packages/shared-types` — общие типы фронтовой доменной модели

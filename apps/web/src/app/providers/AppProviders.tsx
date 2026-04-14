@@ -1,5 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { HelmetProvider } from 'react-helmet-async'
+import { YandexMetrika } from '@/shared/analytics/YandexMetrika'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,5 +13,10 @@ const queryClient = new QueryClient({
 })
 
 export const AppProviders = ({ children }: PropsWithChildren) => (
-  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <YandexMetrika />
+      {children}
+    </QueryClientProvider>
+  </HelmetProvider>
 )

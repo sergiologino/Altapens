@@ -3,9 +3,9 @@
 ## Факты
 - Проект `AltaPens` инициализирован как отдельный продукт в `E:\1_MyProjects\AltaCare\AltaPens`
 - Создан базовый набор AI-memory файлов в `docs/ai/`
-- Поднят frontend workspace с `apps/web`, `packages/api-contracts`, `packages/design-tokens` и `packages/shared-types`
+- Поднят frontend workspace с `apps/web`, `apps/landing`, `packages/api-contracts`, `packages/design-tokens` и `packages/shared-types`
 - Поднят backend в `apps/backend` на `Spring Boot`
-- `apps/web` реализован на `React + TypeScript + Vite`
+- `apps/web` реализован на `React + TypeScript + Vite`; для SEO: `index.html` и `public/robots.txt` / `public/sitemap.xml`, `react-helmet-async` (`DocumentHead` + таблица `shared/seo/app-seo.ts`), для маршрутов `/senior/*` и `/caregiver/*` — `noindex`; см. `apps/web/.env.example` (`VITE_PUBLIC_SITE_URL`)
 - Во frontend добавлены две отдельные оболочки интерфейса: `senior` и `caregiver`
 - Добавлены auth-экраны: login, register, invite accept
 - Добавлен role-aware routing с guard-ами для `senior` и `caregiver`
@@ -43,12 +43,14 @@
 - Backend integration tests на `auth` и `care_network` проходят на H2 test-profile
 - Дизайн-система использует кастомные theme tokens, парную типографику, многослойные тени и отдельные роли по visual tone
 - Сборка `npm run build:web` и unit-тесты `npm run test:web` (Vitest, маппинг care-dashboard) проходят успешно
+- **Лендинг:** `apps/landing` — Next.js 15 (App Router), SSR/SSG для главной; hero `public/landing_picture.webp`; SEO: `metadata` (title, description, keywords, Open Graph, Twitter), `app/sitemap.ts`, `app/robots.ts`, JSON-LD (Organization, WebSite, SoftwareApplication); Яндекс.Метрика — `components/YandexMetrika.tsx`; переменные см. `apps/landing/.env.example`; скрипты корня: `dev:landing`, `build:landing`; опционально `npm run convert-hero` в workspace landing при наличии `landing_source.png` для пересборки webp
 - Сборка и тесты backend: из `apps/backend` через Gradle Wrapper (`gradlew` / `gradlew.bat`), дистрибутив Gradle в репозиторий не коммитится
 - Runtime backend требует PostgreSQL `altacare`: профиль **`local`** — подключение к уже запущенной БД; профиль **`dev`** — автозапуск PostgreSQL в Docker через `spring-boot-docker-compose` и `compose-dev-postgres.yml` на classpath (см. `RUN_LOCAL.md`); интеграционные тесты по-прежнему на H2
 - В корне репозитория: `RUN_LOCAL.md`, корневой `docker-compose.yml` (полный стек или только postgres); для JVM из IDE — профиль `dev` и compose-файл в `apps/backend/src/main/resources/`
 
 ## Планируемое (спецификации)
 - **Голосовой режим senior (двусторонний):** реализован базовый контур в `apps/web/src/features/voice/` (TTS/STT, парсер фраз `voice-intents`, панель `SeniorVoiceShell` в layout senior); подробности и этапы расширения — `docs/ai/specs/voice-mode-senior.md`. **MCP/внешние источники** — позже, после стабилизации голоса (см. §11 той же спецификации).
+- **Аналитика:** Яндекс.Метрика (счётчик `108547150`) подключена в `apps/landing` (`YandexMetrika`) и в `apps/web` (`shared/analytics/YandexMetrika`); отключение локально: `NEXT_PUBLIC_YANDEX_METRIKA_DISABLED` / `VITE_YANDEX_METRIKA_DISABLED`. Google Tag — позже, когда будет готов счётчик.
 
 ## Что поддерживать в актуальном состоянии
 - фактическую структуру backend/frontend/landing
