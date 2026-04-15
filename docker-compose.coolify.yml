@@ -4,7 +4,8 @@ services:
     environment:
       POSTGRES_DB: altacare
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Один и тот же пароль в Coolify для postgres и backend (DB_PASSWORD). POSTGRES_PASSWORD читается только при ПЕРВОМ создании тома; смена env не меняет пароль в уже существующем pens_pgdata — см. комментарий у backend.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
     volumes:
       - pens_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,7 +20,8 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/altacare
       DB_USERNAME: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # Должен совпадать с паролем внутри Postgres. Если меняли POSTGRES_PASSWORD после первого деплоя: либо ALTER USER в БД под старым паролем, либо удалить том pens_pgdata (потеря данных).
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: "8080"
     depends_on:
