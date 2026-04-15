@@ -17,7 +17,7 @@ RUN ./gradlew bootJar -x test --no-daemon --no-watch-fs
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-RUN apk add --no-cache curl
+# Без apk: установка curl часто зависает на зеркалах; healthcheck в compose использует встроенный wget.
 
 COPY --from=build /home/gradle/project/build/libs/*.jar app.jar
 
