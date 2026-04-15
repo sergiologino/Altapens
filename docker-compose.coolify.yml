@@ -44,7 +44,8 @@ services:
       # Редирект http→https обычно уже на прокси Coolify; иначе включите Force HTTPS в настройках proxy.
       - traefik.http.routers.pens-app-https.rule=Host(`app.altapens.ru`)
       - traefik.http.routers.pens-app-https.entrypoints=https
-      - traefik.http.routers.pens-app-https.priority=100
+      # Ниже приоритета лендинга: если в Coolify к apex случайно привязан web, поднимите лендинг (см. комментарий внизу файла).
+      - traefik.http.routers.pens-app-https.priority=50
       - traefik.http.routers.pens-app-https.tls=true
       - traefik.http.routers.pens-app-https.tls.certresolver=letsencrypt
       - traefik.http.routers.pens-app-https.service=pens-app
@@ -62,13 +63,25 @@ services:
       - "3000"
     labels:
       - traefik.enable=true
-      - 'traefik.http.routers.pens-landing-https.rule=Host(`altapens.ru`) || Host(`www.altapens.ru`)'
-      - traefik.http.routers.pens-landing-https.entrypoints=https
-      - traefik.http.routers.pens-landing-https.priority=200
-      - traefik.http.routers.pens-landing-https.tls=true
-      - traefik.http.routers.pens-landing-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.pens-landing-https.service=pens-landing
+      # Два роутера: явный SAN для www в сертификате + приоритет выше любых авто-правил Coolify на сервисе web.
+      - traefik.http.routers.pens-landing-root.rule=Host(`altapens.ru`)
+      - traefik.http.routers.pens-landing-root.entrypoints=https
+      - traefik.http.routers.pens-landing-root.priority=999999
+      - traefik.http.routers.pens-landing-root.tls=true
+      - traefik.http.routers.pens-landing-root.tls.certresolver=letsencrypt
+      - traefik.http.routers.pens-landing-root.tls.domains[0].main=altapens.ru
+      - traefik.http.routers.pens-landing-root.tls.domains[0].sans=www.altapens.ru
+      - traefik.http.routers.pens-landing-root.service=pens-landing
+      - traefik.http.routers.pens-landing-www.rule=Host(`www.altapens.ru`)
+      - traefik.http.routers.pens-landing-www.entrypoints=https
+      - traefik.http.routers.pens-landing-www.priority=999999
+      - traefik.http.routers.pens-landing-www.tls=true
+      - traefik.http.routers.pens-landing-www.tls.certresolver=letsencrypt
+      - traefik.http.routers.pens-landing-www.tls.domains[0].main=altapens.ru
+      - traefik.http.routers.pens-landing-www.tls.domains[0].sans=www.altapens.ru
+      - traefik.http.routers.pens-landing-www.service=pens-landing
       - traefik.http.services.pens-landing.loadbalancer.server.port=3000
 
+# Если apex всё ещё открывает SPA (/welcome): в Coolify уберите домен altapens.ru с сервиса web и оставьте только app.altapens.ru.
 volumes:
   pens_pgdata:
