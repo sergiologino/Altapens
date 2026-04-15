@@ -32,7 +32,7 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/altacare
       DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: TempPass_123456789
       JWT_SECRET: ${JWT_SECRET:-docker-local-dev-jwt-secret-min-32-chars!!}
       SERVER_PORT: "8080"
     depends_on:
@@ -61,6 +61,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      landing:
+        condition: service_started
 
   landing:
     build:
