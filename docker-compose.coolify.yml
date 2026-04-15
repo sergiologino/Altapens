@@ -63,6 +63,7 @@ services:
       dockerfile: docker/landing.Dockerfile
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://altapens.ru}
+        # Ссылка на SPA; если в DNS нет A/AAAA для app — браузер не откроет поддомен. См. apps/landing/.env.example
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://app.altapens.ru}
     expose:
       - "3000"
