@@ -47,7 +47,7 @@ export const AuthLayout = () => (
         Здесь вы входите в приложение, выбираете, кто вы — пожилой человек или родственник, и при
         необходимости принимаете приглашение по коду.
       </p>
-      <div className="button-row wrap-row">
+      <div className="button-row auth-hero-actions wrap-row">
         <ActionLink to="/auth/login">Войти</ActionLink>
         <ActionLink to="/auth/register" tone="secondary">
           Создать профиль
@@ -57,35 +57,8 @@ export const AuthLayout = () => (
         </ActionLink>
       </div>
     </section>
-    <div className="auth-grid">
+    <div className="auth-panel-sole">
       <Outlet />
-      <SectionCard tone="warm">
-        <SectionHeader
-          eyebrow="Демо-доступ"
-          title="Примеры для пробы"
-          description="Можно войти под готовыми именами или сразу создать свой профиль."
-        />
-        <div className="list-stack">
-          <article className="mini-card">
-            <Pill tone="accent">Родственник</Pill>
-            <h3>Анна Смирнова</h3>
-            <p>anna@altacare.demo</p>
-            <p>Пароль: demo1234</p>
-          </article>
-          <article className="mini-card">
-            <Pill tone="watch">Подопечный</Pill>
-            <h3>Иван Иванович</h3>
-            <p>ivan@altacare.demo</p>
-            <p>Пароль: demo1234</p>
-          </article>
-          <article className="mini-card">
-            <Pill tone="calm">Код приглашения</Pill>
-            <h3>Можно ввести при регистрации</h3>
-            <p>ALTA-CARE-2026</p>
-            <p>По нему новый подопечный присоединяется к заботе Анны.</p>
-          </article>
-        </div>
-      </SectionCard>
     </div>
   </div>
 )
@@ -101,7 +74,7 @@ export const LoginPage = () => {
     defaultValues: {
       role: (searchParams.get('role') as UserRole | null) ?? 'caregiver',
       email: '',
-      password: 'demo1234',
+      password: '',
     },
   })
 
@@ -136,7 +109,7 @@ export const LoginPage = () => {
               className="text-input"
               autoComplete="username"
               {...form.register('email')}
-              placeholder="anna@altacare.demo"
+              placeholder="name@example.com"
             />
             {form.formState.errors.email ? (
               <span className="field-error">{form.formState.errors.email.message}</span>
@@ -154,35 +127,9 @@ export const LoginPage = () => {
               <span className="field-error">{form.formState.errors.password.message}</span>
             ) : null}
           </label>
-          <div className="button-row field-span-2 wrap-row">
-            <ActionButton type="submit">
+          <div className="button-row field-span-2 auth-form-actions wrap-row">
+            <ActionButton type="submit" className="auth-submit-primary">
               {loginMutation.isPending ? 'Входим...' : 'Войти'}
-            </ActionButton>
-            <ActionButton
-              type="button"
-              tone="secondary"
-              onClick={() => {
-                form.reset({
-                  role: 'caregiver',
-                  email: 'anna@altacare.demo',
-                  password: 'demo1234',
-                })
-              }}
-            >
-              Подставить демо: родственник
-            </ActionButton>
-            <ActionButton
-              type="button"
-              tone="ghost"
-              onClick={() => {
-                form.reset({
-                  role: 'senior',
-                  email: 'ivan@altacare.demo',
-                  password: 'demo1234',
-                })
-              }}
-            >
-              Подставить демо: подопечный
             </ActionButton>
           </div>
           {feedback ? <div className="form-feedback field-span-2">{feedback}</div> : null}
@@ -209,7 +156,7 @@ export const RegisterPage = () => {
       fullName: '',
       email: '',
       phone: '',
-      password: 'demo1234',
+      password: '',
       inviteCode,
     },
   })

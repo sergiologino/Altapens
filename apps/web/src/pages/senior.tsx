@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { FirstSessionTips } from '@/features/in-app-tips/FirstSessionTips'
+import { useMedicationBrowserReminders } from '@/features/medication-reminders/useMedicationBrowserReminders'
 import { SeniorVoiceShell } from '@/features/voice/SeniorVoiceShell'
-import { CheckinActions } from '@/features/senior-checkin/CheckinActions'
 import { AssistantPanel } from '@/features/ai-chat/AssistantPanel'
 import { MedicationMemoryBlock } from '@/features/medications/MedicationMemoryBlock'
 import { useAuthStore } from '@/app/store/auth-store'
+import { useReminderPrefsStore } from '@/app/store/reminder-prefs-store'
 import { useBackendApi } from '@/shared/api/api-base'
 import { useRecordMedicationIntakeMutation } from '@/shared/api/care-client'
 import {
@@ -49,6 +51,12 @@ export const SeniorLayout = () => {
   const { fontScale, highContrast, voiceEnabled } = useAccessibilityStore()
   const session = useAuthStore((state) => state.session)
   const logout = useAuthStore((state) => state.logout)
+  const browserMedicationReminders = useReminderPrefsStore((s) => s.browserMedicationReminders)
+  const { data: seniorOverview } = useSeniorOverviewQuery()
+  useMedicationBrowserReminders(
+    seniorOverview?.medications,
+    Boolean(session && browserMedicationReminders),
+  )
 
   return (
     <div className={highContrast ? 'high-contrast' : undefined}>
@@ -108,35 +116,32 @@ export const SeniorHomePage = () => {
         </div>
       </SectionCard>
 
-      <div className="panel-grid panel-grid-2">
-        <CheckinActions />
-        <SectionCard>
-          <SectionHeader
-            eyebrow="Сегодня"
-            title="Ближайшие дела"
-            description="Слоты приёма на сегодня."
-          />
-          <div className="list-stack">
-            {data.medications.map((medication) => (
-              <div key={medication.id} className="list-item medication-row">
+      <SectionCard>
+        <SectionHeader
+          eyebrow="Сегодня"
+          title="Ближайшие дела"
+          description="Расписание приёмов на сегодня."
+        />
+        <div className="list-stack">
+          {data.medications.map((medication) => (
+            <div key={medication.id} className="list-item medication-row medication-row--home">
+              <div className="medication-row-head">
                 <div>
                   <strong>{medication.title}</strong>
                   <p>{medication.dosageText}</p>
-                  <MedicationMemoryBlock
-                    title={medication.title}
-                    dosageText={medication.dosageText}
-                    instructions={medication.instructions}
-                    hideSpeakButtons={!voiceEnabled}
-                  />
                 </div>
-                <div className="medication-meta">
-                  <Pill tone={doseTone(medication.status)}>{medication.plannedTime}</Pill>
-                </div>
+                <Pill tone={doseTone(medication.status)}>{medication.plannedTime}</Pill>
               </div>
-            ))}
-          </div>
-        </SectionCard>
-      </div>
+              <MedicationMemoryBlock
+                title={medication.title}
+                dosageText={medication.dosageText}
+                instructions={medication.instructions}
+                hideSpeakButtons={!voiceEnabled}
+              />
+            </div>
+          ))}
+        </div>
+      </SectionCard>
 
       <SectionCard>
         <SectionHeader
@@ -322,6 +327,25 @@ export const SeniorHistoryPage = () => {
 export const SeniorProfilePage = () => {
   const { fontScale, highContrast, voiceEnabled, setFontScale, setHighContrast, setVoiceEnabled } =
     useAccessibilityStore()
+  const browserMedicationReminders = useReminderPrefsStore((s) => s.browserMedicationReminders)
+  const setBrowserMedicationReminders = useReminderPrefsStore((s) => s.setBrowserMedicationReminders)
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission | 'unsupported'>(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
+  )
+
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return
+    setNotifyPermission(Notification.permission)
+  }, [browserMedicationReminders])
+
+  const requestBrowserNotifications = async () => {
+    if (typeof Notification === 'undefined') return
+    const next = await Notification.requestPermission()
+    setNotifyPermission(next)
+    if (next === 'granted') {
+      setBrowserMedicationReminders(true)
+    }
+  }
 
   return (
     <div className="page-stack">
@@ -329,9 +353,42 @@ export const SeniorProfilePage = () => {
         <SectionHeader
           eyebrow="Удобство"
           title="Настройки экрана"
-          description="Тема, шрифт, контраст, озвучка."
+          description="Тема, шрифт, контраст, озвучка и напоминания."
         />
         <div className="settings-grid">
+          <div className="mini-card settings-span-full">
+            <h3>Напоминания о лекарствах</h3>
+            <p className="settings-hint">
+              Когда приложение открыто, в назначенное время можно показать напоминание вне вкладки. Полноценные
+              push без открытого приложения — позже.
+            </p>
+            {notifyPermission === 'unsupported' ? (
+              <p className="settings-hint">В этом браузере уведомления недоступны.</p>
+            ) : notifyPermission === 'denied' ? (
+              <p className="settings-hint">
+                Уведомления отключены в настройках браузера. Разрешите их для этого сайта — тогда напоминания
+                смогут появляться.
+              </p>
+            ) : notifyPermission === 'default' ? (
+              <>
+                <div className="button-row wrap-row settings-reminder-actions">
+                  <ActionButton type="button" onClick={() => void requestBrowserNotifications()}>
+                    Разрешить уведомления
+                  </ActionButton>
+                </div>
+                <p className="settings-hint">Нажмите кнопку и подтвердите в окне браузера — после этого появится переключатель напоминаний.</p>
+              </>
+            ) : (
+              <div className="button-row wrap-row settings-reminder-actions">
+                <ActionButton
+                  tone={browserMedicationReminders ? 'primary' : 'secondary'}
+                  onClick={() => setBrowserMedicationReminders(!browserMedicationReminders)}
+                >
+                  {browserMedicationReminders ? 'Напоминания включены' : 'Включить напоминания'}
+                </ActionButton>
+              </div>
+            )}
+          </div>
           <div className="mini-card">
             <h3>Тема</h3>
             <ThemeToggle />

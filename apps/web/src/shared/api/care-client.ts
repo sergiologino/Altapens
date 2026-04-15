@@ -23,6 +23,7 @@ import {
   type TimelineItemDto,
   type WellbeingCheckinDto,
 } from '@altapens/api-contracts'
+import type { SeniorOverview } from '@altapens/shared-types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/app/store/auth-store'
 import { apiBaseUrl, useBackendApi } from '@/shared/api/api-base'
@@ -305,7 +306,23 @@ export const useRecordMedicationIntakeMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (body: RecordMedicationIntakeRequestDto) => careApi.recordMedicationIntake(body),
-    onSuccess: () => invalidateAfterIntake(queryClient),
+    onSuccess: (_void, variables) => {
+      const doseId = `${variables.medicationId}:${variables.slotIndex}`
+      const next =
+        variables.status === 'taken' || variables.status === 'missed' || variables.status === 'snoozed'
+          ? variables.status
+          : null
+      if (next) {
+        queryClient.setQueriesData<SeniorOverview>({ queryKey: ['senior-overview'] }, (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            medications: old.medications.map((m) => (m.id === doseId ? { ...m, status: next } : m)),
+          }
+        })
+      }
+      invalidateAfterIntake(queryClient)
+    },
   })
 }
 

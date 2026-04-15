@@ -20,7 +20,7 @@ export function MedicationMemoryBlock({ title, dosageText, instructions, hideSpe
 
   return (
     <div className="medication-memory-block">
-      <p className="field-label">Как принимать</p>
+      <p className="medication-memory-label">Как принимать</p>
       <p className="medication-memory-text">{text}</p>
       {!hideSpeakButtons && isSpeechSynthesisSupported() ? (
         <div className="button-row wrap-row">
