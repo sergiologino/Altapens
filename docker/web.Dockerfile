@@ -3,6 +3,8 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+# Нужен для apps/web/tsconfig*.json (extends ../../tsconfig.base.json); без него tsc -b падает в CI/Docker
+COPY tsconfig.base.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/api-contracts/package.json packages/api-contracts/package.json
 COPY packages/design-tokens/package.json packages/design-tokens/package.json
