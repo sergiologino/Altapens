@@ -40,12 +40,23 @@ services:
       - "80"
     labels:
       - traefik.enable=true
-      # SPA: поддомен приложения (основной сайт — лендинг на altapens.ru)
-      - traefik.http.routers.pens.rule=Host(`app.altapens.ru`)
-      - traefik.http.routers.pens.entrypoints=http
-      - traefik.http.services.pens.loadbalancer.server.port=80
+      # Coolify Traefik: entrypoints http (:80) и https (:443). Только http — HTTPS не матчится → ERR_SSL / редирект на http / чужой бэкенд.
+      - traefik.http.middlewares.pens-force-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.pens-force-https.redirectscheme.permanent=true
+      # SPA app.altapens.ru — HTTP → редирект на HTTPS
+      - traefik.http.routers.pens-app-http.rule=Host(`app.altapens.ru`)
+      - traefik.http.routers.pens-app-http.entrypoints=http
+      - traefik.http.routers.pens-app-http.middlewares=pens-force-https
+      - traefik.http.routers.pens-app-http.service=pens-app
+      # SPA — HTTPS + Let's Encrypt (resolver имя как у прокси Coolify)
+      - traefik.http.routers.pens-app-https.rule=Host(`app.altapens.ru`)
+      - traefik.http.routers.pens-app-https.entrypoints=https
+      - traefik.http.routers.pens-app-https.tls=true
+      - traefik.http.routers.pens-app-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.pens-app-https.service=pens-app
+      - traefik.http.services.pens-app.loadbalancer.server.port=80
 
-  # SSR-лендинг: apex и www (иначе Host не совпадает и трафик уходит на catch-all — часто на web/SPA)
+  # SSR-лендинг: apex + www; отдельные роутеры для https (см. web).
   landing:
     build:
       context: .
@@ -57,8 +68,15 @@ services:
       - "3000"
     labels:
       - traefik.enable=true
-      - 'traefik.http.routers.pens-landing.rule=Host(`altapens.ru`) || Host(`www.altapens.ru`)'
-      - traefik.http.routers.pens-landing.entrypoints=http
+      - 'traefik.http.routers.pens-landing-http.rule=Host(`altapens.ru`) || Host(`www.altapens.ru`)'
+      - traefik.http.routers.pens-landing-http.entrypoints=http
+      - traefik.http.routers.pens-landing-http.middlewares=pens-force-https
+      - traefik.http.routers.pens-landing-http.service=pens-landing
+      - 'traefik.http.routers.pens-landing-https.rule=Host(`altapens.ru`) || Host(`www.altapens.ru`)'
+      - traefik.http.routers.pens-landing-https.entrypoints=https
+      - traefik.http.routers.pens-landing-https.tls=true
+      - traefik.http.routers.pens-landing-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.pens-landing-https.service=pens-landing
       - traefik.http.services.pens-landing.loadbalancer.server.port=3000
 
 volumes:
