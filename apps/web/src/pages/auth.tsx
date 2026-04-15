@@ -42,17 +42,15 @@ export const AuthLayout = () => (
   <div className="portal-page auth-page">
     <section className="hero-panel auth-hero">
       <span className="eyebrow">Вход в AltaPens</span>
-      <h1 className="hero-title">Войти, выбрать роль и пригласить близких</h1>
+      <h1 className="hero-title">Вход и приглашения</h1>
       <p className="hero-description">
-        Здесь вы входите в приложение, выбираете, кто вы — пожилой человек или родственник, и при
-        необходимости принимаете приглашение по коду.
+        Войдите с email и паролем — на форме входа выберите роль (подопечный или родственник). Новый
+        профиль — из ссылки «Зарегистрироваться» под формой входа. Код от близких — в «Принять
+        приглашение».
       </p>
       <div className="button-row auth-hero-actions wrap-row">
-        <ActionLink to="/auth/login">Войти</ActionLink>
-        <ActionLink to="/auth/register" tone="secondary">
-          Создать профиль
-        </ActionLink>
-        <ActionLink to="/auth/invite" tone="ghost">
+        <ActionLink to="/auth/login">Вход</ActionLink>
+        <ActionLink to="/auth/invite" tone="secondary">
           Принять приглашение
         </ActionLink>
       </div>
