@@ -1,5 +1,8 @@
 # AI Changelog
 
+## 2026-04-15
+- Прод-домены: Traefik в `docker-compose.coolify.yml` — лендинг `altapens.ru`, SPA `app.altapens.ru`; CORS backend: добавлен `https://app.altapens.ru`
+
 ## 2026-04-14
 - **Landing:** добавлен `apps/landing` (Next.js 15 App Router) — маркетинговая главная с hero `landing_picture.webp`, адаптивная вёрстка, `sitemap.ts` / `robots.ts`, метаданные и JSON-LD для поисковиков и GEO; корневые скрипты `dev:landing`, `build:landing`; `convert-hero` для пересборки webp из `landing_source.png`
 - **Landing (тексты и обзор):** упрощён язык для аудитории; убран видимый блок про SEO; обзор экранов с PNG-заглушками в `public/placeholders/`; маршруты `/dlya-pensionerov`, `/dlya-blizkih` с отдельным `metadata` (`seo-copy.ts`); скрытый GEO-текст `.geoHidden`; общий хедер/футер

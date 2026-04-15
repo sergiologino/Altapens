@@ -32,6 +32,7 @@
   - `GET/POST /api/v1/care/medications`, `GET /api/v1/care/medications/today-doses`, `POST /api/v1/care/medications/intake` (курс, слоты на день, фиксация приёма по слоту)
   - `POST/GET /api/v1/care/checkins` (самочувствие подопечного; опекун — с `seniorUserId`)
   - `GET /api/v1/care/timeline` (объединённая лента чек-инов и приёмов лекарств; опекун — с `seniorUserId`)
+- CORS в backend (`application.yml` / `CorsProperties`): в т.ч. `https://altapens.ru`, `https://www.altapens.ru`, `https://app.altapens.ru` (поддомен приложения) и localhost для разработки
 - В backend добавлены Flyway миграции и JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`, `medications`, `wellbeing_checkins`, `medication_intakes`
 - В backend есть demo seed data для `Анна Смирнова` caregiver и `Иван Иванович` senior
 - Frontend auth client умеет работать через HTTP adapter при наличии `VITE_API_BASE_URL`, сохраняя fallback на local adapter
@@ -43,7 +44,7 @@
 - Backend integration tests на `auth` и `care_network` проходят на H2 test-profile
 - Дизайн-система использует кастомные theme tokens, парную типографику, многослойные тени и отдельные роли по visual tone
 - Сборка `npm run build:web` и unit-тесты `npm run test:web` (Vitest, маппинг care-dashboard) проходят успешно
-- **Лендинг:** `apps/landing` — Next.js 15 (App Router), `output: 'standalone'`; hero `public/landing_picture.webp`; маршруты `/dlya-pensionerov`, `/dlya-blizkih` с SEO в `src/lib/seo-copy.ts`; обзор экранов с заглушками `public/placeholders/*.png`, клик открывает модальный просмотр (`LightboxImage`); скрытый GEO `.geoHidden`; Яндекс.Метрика — `YandexMetrika.tsx`; **Docker:** `docker/landing.Dockerfile`, сервис `landing` в `docker-compose.yml` (порт **3081:3000**) и в `docker-compose.coolify.yml` (Traefik на `www.pens.altacod.com`, при необходимости сменить host); переменные см. `apps/landing/.env.example`; `dev:landing`, `build:landing`; `convert-hero` при наличии `landing_source.png`
+- **Лендинг:** `apps/landing` — Next.js 15 (App Router), `output: 'standalone'`; hero `public/landing_picture.webp`; маршруты `/dlya-pensionerov`, `/dlya-blizkih` с SEO в `src/lib/seo-copy.ts`; обзор экранов с заглушками `public/placeholders/*.png`, клик открывает модальный просмотр (`LightboxImage`); скрытый GEO `.geoHidden`; Яндекс.Метрика — `YandexMetrika.tsx`; **Docker:** `docker/landing.Dockerfile`, сервис `landing` в `docker-compose.yml` (порт **3081:3000**) и в `docker-compose.coolify.yml` (Traefik: лендинг `altapens.ru`, SPA `app.altapens.ru`); переменные см. `apps/landing/.env.example`; `dev:landing`, `build:landing`; `convert-hero` при наличии `landing_source.png`
 - Сборка и тесты backend: из `apps/backend` через Gradle Wrapper (`gradlew` / `gradlew.bat`), дистрибутив Gradle в репозиторий не коммитится
 - Runtime backend требует PostgreSQL `altacare`: профиль **`local`** — подключение к уже запущенной БД; профиль **`dev`** — автозапуск PostgreSQL в Docker через `spring-boot-docker-compose` и `compose-dev-postgres.yml` на classpath (см. `RUN_LOCAL.md`); интеграционные тесты по-прежнему на H2
 - В корне репозитория: `RUN_LOCAL.md`, корневой `docker-compose.yml` (полный стек или только postgres); для JVM из IDE — профиль `dev` и compose-файл в `apps/backend/src/main/resources/`

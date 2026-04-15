@@ -50,6 +50,7 @@ app:
       - "http://127.0.0.1:*"
       - "https://altapens.ru"
       - "https://www.altapens.ru"
+      - "https://app.altapens.ru"
   security:
     jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
     issuer: altacare-backend

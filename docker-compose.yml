@@ -1,6 +1,7 @@
 # Полный стек для проверки UI/UX и API: PostgreSQL + Spring Boot + nginx (статика + прокси /api).
 # Веб-приложение (SPA): http://localhost:3080 — один origin с API, без CORS к backend.
 # Лендинг Next.js (SSR): http://localhost:3081 — задайте NEXT_PUBLIC_APP_URL=http://localhost:3080, чтобы кнопки вели в SPA.
+# В проде обычно: сайт https://altapens.ru , приложение https://app.altapens.ru (см. docker-compose.coolify.yml).
 # Прямой доступ к API/Swagger (опционально): http://localhost:8090/swagger-ui/index.html
 #
 # Если порт 5432 занят локальным Postgres — смените проброс, например "5433:5432",
