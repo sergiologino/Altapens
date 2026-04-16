@@ -45,14 +45,20 @@ services:
       - "80"
     labels:
       - traefik.enable=true
-      # Один внешний сервис: Traefik -> web:80; nginx разводит Host на SPA (app) и reverse-proxy на Next (landing:3000).
-      # Так Coolify не обязан корректно вешать два разных домена на два контейнера.
-      - 'traefik.http.routers.pens-app-https.rule=Host(`app.altapens.ru`) || Host(`altapens.ru`) || Host(`www.altapens.ru`)'
+      # Traefik -> web:80; nginx по Host отдаёт SPA (app) или лендинг (apex/www).
+      # Два HTTPS-роутера: отдельный tls.domains для app — иначе ACME/браузер часто ломаются на поддомене при одном multi-SAN.
+      - 'traefik.http.routers.pens-site-https.rule=Host(`altapens.ru`) || Host(`www.altapens.ru`)'
+      - traefik.http.routers.pens-site-https.entrypoints=https
+      - traefik.http.routers.pens-site-https.tls=true
+      - traefik.http.routers.pens-site-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.pens-site-https.tls.domains[0].main=altapens.ru
+      - traefik.http.routers.pens-site-https.tls.domains[0].sans=www.altapens.ru
+      - traefik.http.routers.pens-site-https.service=pens-app
+      - traefik.http.routers.pens-app-https.rule=Host(`app.altapens.ru`)
       - traefik.http.routers.pens-app-https.entrypoints=https
       - traefik.http.routers.pens-app-https.tls=true
       - traefik.http.routers.pens-app-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.pens-app-https.tls.domains[0].main=altapens.ru
-      - traefik.http.routers.pens-app-https.tls.domains[0].sans=www.altapens.ru,app.altapens.ru
+      - traefik.http.routers.pens-app-https.tls.domains[0].main=app.altapens.ru
       - traefik.http.routers.pens-app-https.service=pens-app
       - traefik.http.services.pens-app.loadbalancer.server.port=80
 
