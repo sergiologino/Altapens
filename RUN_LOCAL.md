@@ -102,6 +102,10 @@ docker compose up --build
 
 Файлы: **`docker-compose.yml`**, **`apps/backend/Dockerfile`**, **`docker/web.Dockerfile`**, **`docker/nginx.conf`**, **`/.dockerignore`**. Для продакшена позже разнесите сервисы и домены так же, как сейчас разнесены порты.
 
+### Деплой в Coolify (таймаут сборки)
+
+Полный `docker compose build` поднимает **web**, **landing** и **backend** параллельно; **backend** тянет Gradle и зависимости — на слабом сервере или при холодном кэше это может занять **несколько минут**. Если в логе деплоя ошибка без текста Gradle сразу после `./gradlew bootJar`, проверьте **увеличение таймаута сборки** в настройках Coolify (приложение / сервер сборки) и что включён **Docker BuildKit** (по умолчанию в современных Docker). В `apps/backend/Dockerfile` зависимости Gradle кэшируются отдельным слоем и через `--mount=type=cache` для ускорения повторных деплоев.
+
 ---
 
 ## 1. База данных PostgreSQL
