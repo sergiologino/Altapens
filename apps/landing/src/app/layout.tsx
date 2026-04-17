@@ -62,6 +62,9 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   category: 'health',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 function JsonLd() {

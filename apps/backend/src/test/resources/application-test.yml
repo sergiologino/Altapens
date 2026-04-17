@@ -21,3 +21,6 @@ app:
   push:
     fcm:
       enabled: false
+  yookassa:
+    enabled: false
+    public-app-url: http://localhost:5173

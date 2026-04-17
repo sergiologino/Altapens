@@ -79,3 +79,9 @@ app:
       enabled: ${APP_PUSH_FCM_ENABLED:false}
       missed-check-interval-ms: ${APP_PUSH_FCM_MISSED_CHECK_INTERVAL_MS:120000}
       service-account-json-path: ${APP_PUSH_FCM_SERVICE_ACCOUNT_JSON_PATH:}
+  # ЮKassa: донаты (при enabled=false создаётся демо-платёж без вызова API)
+  yookassa:
+    enabled: ${APP_YOOKASSA_ENABLED:false}
+    shop-id: ${APP_YOOKASSA_SHOP_ID:}
+    secret-key: ${APP_YOOKASSA_SECRET_KEY:}
+    public-app-url: ${APP_PUBLIC_WEB_URL:http://localhost:5173}

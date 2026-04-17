@@ -64,6 +64,14 @@ const routes: { prefix: string; seo: Partial<PageSeo> }[] = [
         'Начало работы: вход как подопечный или как опекун.',
     },
   },
+  {
+    prefix: '/donate',
+    seo: {
+      title: 'Поддержать проект — AltaPens',
+      description:
+        'Пожертвование на развитие AltaPens: помощь пожилым и их близким. Оплата через ЮKassa.',
+    },
+  },
 ]
 
 function mergeSeo(partial?: Partial<PageSeo>): PageSeo {

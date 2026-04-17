@@ -24,6 +24,11 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: "8080"
+      # Донаты ЮKassa: return_url ведёт на SPA (должен совпадать с публичным URL приложения)
+      APP_PUBLIC_WEB_URL: ${APP_PUBLIC_WEB_URL:-https://app.altapens.ru}
+      APP_YOOKASSA_ENABLED: ${APP_YOOKASSA_ENABLED:-false}
+      APP_YOOKASSA_SHOP_ID: ${APP_YOOKASSA_SHOP_ID:-}
+      APP_YOOKASSA_SECRET_KEY: ${APP_YOOKASSA_SECRET_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

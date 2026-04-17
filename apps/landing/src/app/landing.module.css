@@ -18,12 +18,26 @@
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-display), Georgia, serif;
   font-weight: 600;
   font-size: 1.35rem;
   letter-spacing: -0.02em;
   color: var(--color-wood);
   text-decoration: none;
+}
+
+.logoMark {
+  flex-shrink: 0;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .nav {
@@ -73,6 +87,13 @@
   background: linear-gradient(135deg, #7c5cff, #5a3fd4);
   color: #fff !important;
   box-shadow: var(--shadow-soft);
+}
+
+.btnDonate {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-ink) !important;
+  border: 1px solid rgba(76, 74, 102, 0.2);
+  box-shadow: 0 2px 8px rgba(76, 74, 102, 0.08);
 }
 
 .btnGhost {

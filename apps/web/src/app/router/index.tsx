@@ -25,6 +25,7 @@ import {
   SeniorSosPage,
   SeniorTodayPage,
 } from '@/pages/senior'
+import { DonatePage, DonateReturnPage } from '@/pages/donate'
 
 const router = createBrowserRouter([
   {
@@ -41,6 +42,14 @@ const router = createBrowserRouter([
       {
         path: '/start',
         element: <RolePortalPage />,
+      },
+      {
+        path: '/donate',
+        element: <DonatePage />,
+      },
+      {
+        path: '/donate/return',
+        element: <DonateReturnPage />,
       },
       {
         path: '/auth',

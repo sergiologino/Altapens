@@ -15,7 +15,8 @@
 Подробности и запуск в Android Studio: `Mobile_version/README.md`, `Mobile_version/RUN_MOBILE_LOCAL.md`.
 
 ## Соответствие веб-приложению
-- **Функциональность:** тот же маршрутизатор, senior/caregiver shell, auth, сеть заботы, лекарства, чек-ины, лента, голос (Web Speech API в WebView), SOS и пр. — всё приходит из одной web-сборки.
+- **Функциональность:** тот же маршрутизатор, senior/caregiver shell, auth, сеть заботы, лекарства, чек-ины, лента, голос (Web Speech API в WebView), SOS, донаты (`/donate`) и пр. — всё приходит из одной web-сборки.
+- **Иконка приложения:** растровые `mipmap` в Android/iOS по-прежнему задаются в нативном проекте; графику для экспорта взять из `apps/web/public/brand-logo.svg` или `favicon.svg` (при необходимости конвертировать в PNG 192/512 и подставить через Android Studio / `@capacitor/assets`).
 - **Backend:** URL API задаётся на этапе **сборки** веба (`VITE_API_BASE_URL` в `apps/web/.env.production` или CI), затем снова `prepare:www`.
 
 ## Ограничения и отличия от браузера

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import styles from '@/app/landing.module.css'
 
 const appHref = process.env.NEXT_PUBLIC_APP_URL ?? '/app'
+const donateHref = `${(process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.altapens.ru').replace(/\/$/, '')}/donate`
 
 type NavKey = 'home' | 'pensioner' | 'family'
 
@@ -10,6 +11,8 @@ export function LandingHeader({ active }: { active: NavKey }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href="/" className={styles.logo}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand-logo.svg" alt="" width={36} height={36} className={styles.logoMark} />
           AltaPens
         </Link>
         <nav className={styles.nav} aria-label="Основная навигация">
@@ -33,9 +36,14 @@ export function LandingHeader({ active }: { active: NavKey }) {
           </Link>
           <Link href="/#obzor">Обзор экранов</Link>
         </nav>
-        <Link className={`${styles.btn} ${styles.btnPrimary}`} href={appHref}>
-          Открыть приложение
-        </Link>
+        <div className={styles.headerActions}>
+          <Link className={`${styles.btn} ${styles.btnDonate}`} href={donateHref}>
+            Поддержать проект
+          </Link>
+          <Link className={`${styles.btn} ${styles.btnPrimary}`} href={appHref}>
+            Открыть приложение
+          </Link>
+        </div>
       </div>
     </header>
   )

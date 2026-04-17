@@ -1,6 +1,8 @@
 # AI Changelog
 
 ## 2026-04-17
+- **Бренд / донаты:** SVG-логотип «сердце в ладонях» — `apps/web/public/favicon.svg`, `brand-logo.svg`; верхняя полоса `AppTopBar` на всех экранах SPA; логотип в `ShellNav`; страницы `/donate`, `/donate/return` (paywall + возврат с ЮKassa); `payments-client`, контракты в `api-contracts`; лендинг — иконка, логотип в шапке, кнопка «Поддержать проект» на `NEXT_PUBLIC_APP_URL/donate`; Vitest `payments-contract.test.ts`
+- **Backend / ЮKassa:** Flyway `V6__donation_payments.sql`; `app.yookassa.*`; модуль `modules/payments` — `POST /api/v1/payments/donations`, `GET .../donations/{id}/status`; Security permitAll для этих путей; интеграционный тест `DonationPaymentIntegrationTest`; `docker-compose.coolify.yml` — env для ЮKassa и `APP_PUBLIC_WEB_URL`; `DECISIONS.md` DEC-020; обновлены `domains/backend-auth-care.md`, `domains/frontend-web.md`, `domains/mobile-app.md`, `CURRENT_STATE.md`
 - **Backend / push:** Flyway `V5__notification_send_log.sql`; Firebase Admin SDK (`com.google.firebase:firebase-admin`); `app.push.fcm.*` в `application.yml`; при включённом FCM — `FirebaseMessagingConfiguration`, `MissedMedicationSlotScanner`, `MissedMedicationPushService`, `CaregiverPushTargetService`, `NotificationDedupeService`, `MissedMedicationPushScheduler` (`@EnableScheduling`); триггер пропущенного приёма для курсов с `notify_on_missed` → FCM опекунам; обновлены `docs/push-notifications.md`, `RUN_LOCAL.md`, `CURRENT_STATE.md`, `DECISIONS.md` (DEC-019), `domains/backend-auth-care.md`
 
 ## 2026-04-16

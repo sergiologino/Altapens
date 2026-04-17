@@ -108,6 +108,12 @@
 - Решение: таблица `device_push_tokens` (FK на `users`, уникальный `token`, поля `platform`, `created_at`, `updated_at`); endpoint `POST /api/v1/notifications/devices` с JWT, тело `{ platform, token }` (`android` | `ios` | `web`), upsert по `token`; модуль `modules/notifications`
 - Последствия: ключи Firebase остаются вне репозитория; отправка FCM с сервера — см. DEC-019
 
+## DEC-020: Донаты через ЮKassa (backend + публичные endpoints)
+- Статус: Accepted
+- Контекст: нужны добровольные пожертвования с веба и мобильной оболочки (тот же SPA); провайдер — ЮKassa, тестовый магазин с последующей сменой ключей
+- Решение: таблица `donation_payments` (Flyway `V6`); `POST /api/v1/payments/donations` (публичный, опционально JWT для привязки `user_id`) создаёт платёж; при `app.yookassa.enabled=false` — демо-режим без вызова API, `confirmationUrl` ведёт на `/donate/return?demo=1`; при `enabled=true` — REST `POST https://api.yookassa.ru/v3/payments` (Basic shopId:secretKey, Idempotency-Key); `GET /api/v1/payments/donations/{id}/status` синхронизирует статус с ЮKassa для `pending`; `app.yookassa.public-app-url` задаёт `return_url` (должен совпадать с публичным origin SPA)
+- Последствия: на Coolify/backend задать `APP_PUBLIC_WEB_URL`, `APP_YOOKASSA_*`; веб — `VITE_API_BASE_URL` или same-origin; вебхуки ЮKassa не обязательны для MVP (проверка по GET после редиректа)
+
 ## DEC-019: Отправка FCM с backend и дедупликация
 - Статус: Accepted
 - Контекст: после регистрации токенов нужна серверная доставка; продуктовый сценарий — пропущенный приём при `notify_on_missed`

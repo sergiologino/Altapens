@@ -5,7 +5,7 @@
 
 ## Реализовано сейчас
 - workspace-структура для фронтенда
-- пакет `api-contracts` с zod-схемами auth/care DTO
+- пакет `api-contracts` с zod-схемами auth/care/payments DTO
 - дизайн-токены в отдельном пакете
 - shared типы доменной модели в отдельном пакете
 - senior shell и caregiver shell
@@ -20,6 +20,7 @@
 - caregiver-экраны: dashboard, seniors, senior detail, invite create, medication form, events, AI, settings
 - форма настройки лекарства на `React Hook Form + Zod`
 - **голос senior:** `features/voice` — озвучка маршрутов, удержание кнопки для распознавания (ru-RU), интенты → checkin / medications intake / SOS; при отключённой озвучке в профиле панель скрыта
+- **бренд и донаты:** favicon/логотип `public/favicon.svg`, `brand-logo.svg`; `AppTopBar` + `BrandLogo` в боковой навигации; страницы `/donate`, `/donate/return`; `shared/api/payments-client.ts` (нужен backend URL); SEO для `/donate` в `shared/seo/app-seo.ts`
 
 ## UX-принципы
 - senior: один экран = одна задача, крупные кнопки, высокий контраст, крупный текст, при необходимости голос

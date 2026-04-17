@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { BrandLogo } from '@/shared/ui/BrandLogo'
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(' ')
@@ -37,6 +38,9 @@ export const ShellNav = ({
 }) => (
   <div className="surface-card nav-card">
     <div className="nav-copy">
+      <div className="nav-brand-mark" aria-hidden="true">
+        <BrandLogo size={44} />
+      </div>
       <span className="eyebrow">AltaPens</span>
       <h1 className="nav-title">{title}</h1>
       <p className="nav-subtitle">{subtitle}</p>

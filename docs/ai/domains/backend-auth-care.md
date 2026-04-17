@@ -15,6 +15,7 @@
 - integration tests на критические сценарии auth/invite flow
 - модуль **medications** + **wellbeing_checkins** / **medication_intakes**: курсы и фиксация приёма по слоту на календарную дату в TZ подопечного; чек-ины самочувствия; `GET /care/timeline` объединяет события
 - модуль **notifications**: `POST /api/v1/notifications/devices`; `device_push_tokens`; при включённом `app.push.fcm.enabled` и ключе Firebase — FCM и планировщик пропущенных приёмов (`notify_on_missed` → опекуны); `notification_send_log` для дедупликации
+- модуль **payments / донаты**: `donation_payments` (Flyway `V6`); `POST /api/v1/payments/donations` (публичный, JWT опционален), `GET /api/v1/payments/donations/{id}/status`; интеграция с ЮKassa при `app.yookassa.enabled=true` и ключах магазина; иначе демо-режим (см. `DECISIONS.md` DEC-020)
 - профиль **`dev`**: `spring-boot-docker-compose` + `compose-dev-postgres.yml` (classpath) — автозапуск PostgreSQL 16 при локальном `bootRun` (см. `RUN_LOCAL.md`)
 
 ## Контракты и интеграция

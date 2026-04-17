@@ -180,6 +180,24 @@ export const registerDevicePushRequestSchema = z.object({
   token: z.string().min(1).max(4096),
 })
 
+/** POST /api/v1/payments/donations — донат через ЮKassa */
+export const createDonationRequestSchema = z.object({
+  amountRub: z.number().int().min(100).max(1_000_000),
+})
+
+export const createDonationResponseSchema = z.object({
+  donationId: z.string().uuid(),
+  confirmationUrl: z.string().min(1),
+  demoMode: z.boolean(),
+})
+
+export const donationStatusResponseSchema = z.object({
+  donationId: z.string().uuid(),
+  status: z.enum(['pending', 'succeeded', 'canceled']),
+  amountRub: z.number().int(),
+  demoMode: z.boolean(),
+})
+
 export type AuthActionResultDto = z.infer<typeof authActionResultSchema>
 export type AuthUserDto = z.infer<typeof authUserSchema>
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>
@@ -202,3 +220,6 @@ export type RecordWellbeingCheckinRequestDto = z.infer<typeof recordWellbeingChe
 export type TimelineItemDto = z.infer<typeof timelineItemSchema>
 export type RecordMedicationIntakeRequestDto = z.infer<typeof recordMedicationIntakeRequestSchema>
 export type RegisterDevicePushRequestDto = z.infer<typeof registerDevicePushRequestSchema>
+export type CreateDonationRequestDto = z.infer<typeof createDonationRequestSchema>
+export type CreateDonationResponseDto = z.infer<typeof createDonationResponseSchema>
+export type DonationStatusResponseDto = z.infer<typeof donationStatusResponseSchema>
