@@ -2,8 +2,9 @@
 
 ## Контуры системы
 - `backend` — единый backend/API и бизнес-логика
-- `frontend` — основное пользовательское приложение
+- `frontend` — основное пользовательское приложение (web)
 - `landing` — маркетинговый лендинг
+- `mobile` — нативная оболочка (Capacitor) для того же SPA, что и `apps/web`; репозиторий `Mobile_version` рядом с монорепозиторием, см. `docs/ai/domains/mobile-app.md`
 
 ## Базовое взаимодействие
 - `frontend` получает данные и выполняет действия через `backend`
@@ -16,6 +17,7 @@
 - `apps/backend` — Spring Boot modular monolith backend
 - `apps/web` — React + TypeScript + Vite приложение
 - `apps/landing` — Next.js (App Router) маркетинговый лендинг, отдельная сборка и деплой
+- мобильный клиент — отдельный репозиторий Capacitor, в WebView загружается production-сборка `apps/web` с `--base ./`
 - `packages/api-contracts` — типизированные frontend-ready контракты для auth/care flows
 - `packages/design-tokens` — централизованные токены темы, типографики, теней, motion и layering
 - `packages/shared-types` — общие типы фронтовой доменной модели

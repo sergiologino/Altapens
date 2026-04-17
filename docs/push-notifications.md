@@ -9,10 +9,14 @@
 
 ## 1. Backend
 
-- Таблица `device_push_tokens`: `user_id`, `platform`, `token`, `created_at`.
-- `POST /api/v1/notifications/devices` — сохранить/обновить токен (JWT).
-- Сервис отправки: по событию «просрочен слот без подтверждения», «нет чек-ина за день к вечеру», «SOS» — ставить задачу в очередь (или вызывать FCM HTTP v1).
-- Конфигурация: ключи Firebase / VAPID для Web — только на сервере и в CI secrets.
+- Таблица `device_push_tokens`: `user_id`, `platform`, `token`, `created_at`, `updated_at` — **реализовано** (Flyway `V4__device_push_tokens.sql`).
+- `POST /api/v1/notifications/devices` — сохранить/обновить токен по JWT (**реализовано**); upsert по уникальному `token`.
+- Таблица `notification_send_log` — дедупликация отправленных событий (**реализовано**, Flyway `V5__notification_send_log.sql`).
+- **FCM (Firebase Admin SDK):** при `app.push.fcm.enabled=true` и пути к JSON сервисного аккаунта (`app.push.fcm.service-account-json-path` или `GOOGLE_APPLICATION_CREDENTIALS`) — отправка на токены `android`/`ios`.
+- **Триггер «просрочен приём»:** планировщик с интервалом `app.push.fcm.missed-check-interval-ms` (по умолчанию 120 с); для курсов с `notify_on_missed` и слотом в статусе «просрочен» без отметки — push **опекунам** (активная связь), если у них есть FCM-токены. Дедуп по ключу на календарный день и слот.
+- Очередь задач (Redis/RabbitMQ) — **не используется**; при росте нагрузки можно вынести.
+- **Чек-ин к вечеру, SOS** — **в плане**.
+- VAPID / Web Push для браузера — **в плане**.
 
 ## 2. Web (браузер)
 
@@ -21,8 +25,9 @@
 
 ## 3. Мобильная оболочка (Capacitor)
 
-- Плагин `@capacitor/push-notifications`: разрешения, `registration` → токен на backend.
-- Для Android — `google-services.json` и FCM; для iOS — capabilities Push + ключи в Apple Developer.
+- Плагин `@capacitor/push-notifications`: разрешения, `registration` → токен на backend — **реализовано** в `apps/web` (`shared/push/native-push.ts`, вызов после входа при нативной платформе); зависимость продублирована в `Mobile_version` для `cap sync`.
+- Для получения реального FCM-токена на Android по-прежнему нужны **`google-services.json`** и проект Firebase; без них регистрация может завершиться ошибкой (см. логи `registrationError`).
+- Для iOS — capabilities Push + ключи в Apple Developer.
 
 ## 4. Триггеры (согласовать продукт)
 
@@ -30,4 +35,4 @@
 - Отсутствие отметки самочувствия к заданному часу.
 - Подтверждённый SOS.
 
-Этот документ фиксирует направление работ; реализация по шагам — отдельными задачами (backend → mobile → web).
+Этот документ фиксирует направление работ. Реализованы **регистрация токена**, **отправка FCM** при включённом Firebase на сервере и **уведомление опекунам о пропущенном приёме** (курс с `notify_on_missed`). Дальше — Web Push, чек-ины, SOS, при необходимости очередь.

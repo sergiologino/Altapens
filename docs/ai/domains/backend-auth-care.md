@@ -14,6 +14,7 @@
 - demo seed data для `Анна Смирнова` caregiver и `Иван Иванович` senior
 - integration tests на критические сценарии auth/invite flow
 - модуль **medications** + **wellbeing_checkins** / **medication_intakes**: курсы и фиксация приёма по слоту на календарную дату в TZ подопечного; чек-ины самочувствия; `GET /care/timeline` объединяет события
+- модуль **notifications**: `POST /api/v1/notifications/devices`; `device_push_tokens`; при включённом `app.push.fcm.enabled` и ключе Firebase — FCM и планировщик пропущенных приёмов (`notify_on_missed` → опекуны); `notification_send_log` для дедупликации
 - профиль **`dev`**: `spring-boot-docker-compose` + `compose-dev-postgres.yml` (classpath) — автозапуск PostgreSQL 16 при локальном `bootRun` (см. `RUN_LOCAL.md`)
 
 ## Контракты и интеграция
@@ -24,7 +25,7 @@
 ## Ограничения сейчас
 - основной runtime-профиль ожидает реальную PostgreSQL базу `altacare` (профиль `dev` поднимает её в Docker автоматически; отдельного in-memory H2 для «ручного» dev без Docker нет)
 - нет refresh-token/session blacklist логики
-- нет SOS/notifications/AI domain endpoints; история приёмов за прошлые дни без отдельного API — только «сегодня» и лента недавних intakes
+- нет SOS endpoints; **уведомления:** регистрация токена, FCM-отправка при включённом Firebase; триггер только «просрочен приём» (`notify_on_missed`); Web Push и прочие триггеры — в плане; история приёмов за прошлые дни без отдельного API — только «сегодня» и лента недавних intakes
 
 ## Следующие логичные шаги
 - перевести senior/caregiver data screens на реальные care endpoints вместо mock data

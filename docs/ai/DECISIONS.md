@@ -78,7 +78,13 @@
 - Решение: разместить лендинг в `apps/landing` на Next.js 15 с `metadata`, `app/sitemap.ts`, `app/robots.ts`, JSON-LD в `layout`; статические ассеты в `public/`; канонический origin через `NEXT_PUBLIC_SITE_URL`; ссылка в приложение через `NEXT_PUBLIC_APP_URL`
 - Последствия: прод-сборка лендинга — `npm run build --workspace landing`; локально порт `3001` по умолчанию; шрифты Google: заголовки Fraunces (latin/latin-ext), текст Manrope с кириллицей
 
-## DEC-014: Напоминания о лекарствах в web — сначала браузерные (Notification API)
+## DEC-015: Прод: TLS на внешнем прокси, Traefik Coolify — HTTP и Host под sslip
+- Статус: Accepted
+- Контекст: домашний сервер за динамическим IP; публичный вход — reverse proxy (напр. Caddy на VDS), до Coolify трафик идёт по HTTP с подменой `Host` на имена вида `*.localhost.sslip.io`, выданные Coolify
+- Решение: не опираться в Traefik только на публичные `Host(`altapens.ru`)` / `app…` без sslip; один роутер на `entrypoints=http` с `Host`, включающим `altapens-web.localhost.sslip.io`, `altapens-land.localhost.sslip.io` и при необходимости публичные FQDN; в nginx у блока SPA добавить `altapens-web.localhost.sslip.io` в `server_name`, иначе запрос с подменённым Host попадает в `default_server` (лендинг)
+- Последствия: выпуск TLS на стороне edge (Caddy); ACME на Traefik Coolify для этих имён не обязателен; смена схемы прокси — проверять согласованность `header_up Host` и правил Traefik/nginx
+
+## DEC-016: Напоминания о лекарствах в web — сначала браузерные (Notification API)
 - Статус: Accepted
 - Контекст: полноценный push (FCM/Web Push с сервером) ещё не внедрён; пользователям нужны рабочие напоминания по слотам при открытом приложении
 - Решение: для роли senior — запрос разрешения и опциональное включение в «Профиль»; планировщик на `setInterval` сравнивает локальное время со слотами из `useSeniorOverviewQuery`; показ `Notification` в начале минуты слота, дедупликация через `sessionStorage` на календарный день
@@ -89,3 +95,21 @@
 - Контекст: разработчику нужен предсказуемый запуск backend без ручного создания БД и без коммита тяжёлого Gradle; корневой `docker compose` уже есть, но не покрывает сценарий «только JVM + Gradle из IDE»
 - Решение: зависимость `spring-boot-docker-compose` в `developmentOnly`, compose-файл `apps/backend/src/main/resources/compose-dev-postgres.yml` (classpath, чтобы IDE/`bootRun` не зависели от рабочей директории), профиль Spring `dev` задаёт `spring.docker.compose.file` и `spring.docker.compose.enabled=true`, включает `spring.profiles.include=local`; в базовом `application.yml` интеграция Docker Compose по умолчанию **выключена**, чтобы профиль `local`, прод-сборка и тесты не запускали контейнеры
 - Последствия: `bootRun`/IDE с `--spring.profiles.active=dev` поднимают Postgres при наличии Docker; без Docker по-прежнему используют `local` + свой Postgres или корневой `docker compose up -d postgres`
+
+## DEC-017: Мобильный клиент — Capacitor-оболочка и отдельный репозиторий
+- Статус: Accepted
+- Контекст: нужен Android-клиент с тем же UX, что и web, без второй кодовой базы UI; разработка оболочки логично вынесена из монорепозитория AltaPens
+- Решение: репозиторий `Mobile_version` (Capacitor 7): `prepare:www` собирает `apps/web` через корневой скрипт `build:web:mobile` (`--base ./`) и копирует артефакт в `www/`; нативные проекты — `cap sync`. Минимальная версия Android — **API 31** (Android 12+). Документация домена — `docs/ai/domains/mobile-app.md`
+- Последствия: паритет функций с web достигается обновлением веб-клиента и повторной сборкой оболочки; push и отличия WebView от браузера учитываются отдельно (`docs/push-notifications.md`)
+
+## DEC-018: Регистрация push-токенов устройств на backend
+- Статус: Accepted
+- Контекст: по `docs/push-notifications.md` нужно хранить FCM/APNs/Web-токены для будущей серверной доставки; клиенты уже могут получать токен (Capacitor / позже Web Push)
+- Решение: таблица `device_push_tokens` (FK на `users`, уникальный `token`, поля `platform`, `created_at`, `updated_at`); endpoint `POST /api/v1/notifications/devices` с JWT, тело `{ platform, token }` (`android` | `ios` | `web`), upsert по `token`; модуль `modules/notifications`
+- Последствия: ключи Firebase остаются вне репозитория; отправка FCM с сервера — см. DEC-019
+
+## DEC-019: Отправка FCM с backend и дедупликация
+- Статус: Accepted
+- Контекст: после регистрации токенов нужна серверная доставка; продуктовый сценарий — пропущенный приём при `notify_on_missed`
+- Решение: Firebase Admin SDK при `app.push.fcm.enabled=true`; ключ через `app.push.fcm.service-account-json-path` или `GOOGLE_APPLICATION_CREDENTIALS`; таблица `notification_send_log` с уникальным `dedupe_key`; планировщик Spring (`@Scheduled`) с интервалом из конфига; первая реализация триггера — «просрочен слот» по той же логике, что `today-doses`, уведомления только активным опекунам подопечного, только платформы `android`/`ios`
+- Последствия: без включённого FCM и ключа приложение не инициализирует Firebase; очередь сообщений не вводилась — при масштабировании возможен вынесенный worker

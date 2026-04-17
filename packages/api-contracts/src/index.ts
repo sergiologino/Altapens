@@ -174,6 +174,12 @@ export const recordMedicationIntakeRequestSchema = z.object({
   status: z.enum(['taken', 'missed', 'snoozed']),
 })
 
+/** POST /api/v1/notifications/devices — регистрация FCM/Web push токена (JWT) */
+export const registerDevicePushRequestSchema = z.object({
+  platform: z.enum(['android', 'ios', 'web']),
+  token: z.string().min(1).max(4096),
+})
+
 export type AuthActionResultDto = z.infer<typeof authActionResultSchema>
 export type AuthUserDto = z.infer<typeof authUserSchema>
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>
@@ -195,3 +201,4 @@ export type WellbeingCheckinDto = z.infer<typeof wellbeingCheckinSchema>
 export type RecordWellbeingCheckinRequestDto = z.infer<typeof recordWellbeingCheckinRequestSchema>
 export type TimelineItemDto = z.infer<typeof timelineItemSchema>
 export type RecordMedicationIntakeRequestDto = z.infer<typeof recordMedicationIntakeRequestSchema>
+export type RegisterDevicePushRequestDto = z.infer<typeof registerDevicePushRequestSchema>

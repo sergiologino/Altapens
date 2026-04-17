@@ -32,7 +32,7 @@
 - без backend URL экраны используют полностью локальный mock; persisted store остаётся для offline-демо auth/invite
 - realtime и persistence backend-уровня еще не подключены; **локальные браузерные напоминания** о приёме лекарств для senior (`Notification` + настройка в профиле) работают при открытом приложении; серверный push — см. `docs/push-notifications.md`
 - **landing** вынесен в `apps/landing` (Next.js), не в `apps/web`
-- mobile-контур (Capacitor) — отдельный репозиторий/сборка, см. changelog
+- **mobile** — отдельный репозиторий Capacitor; тот же SPA (`build:web:mobile`), см. `docs/ai/domains/mobile-app.md`
 
 ## Следующие логичные шаги
 - вынести больше UI-примитивов в reusable пакет

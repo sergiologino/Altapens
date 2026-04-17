@@ -72,6 +72,8 @@
 
 Если переменные для БД и JWT не заданы, подставляются значения из `application.yml` (для продакшена **обязательно** задать свой `JWT_SECRET`).
 
+**FCM (push с сервера):** по умолчанию выключено (`app.push.fcm.enabled=false`). Чтобы включить отправку уведомлений опекунам о пропущенном приёме лекарства, задайте `APP_PUSH_FCM_ENABLED=true` и путь к JSON ключу сервисного аккаунта Firebase: `APP_PUSH_FCM_SERVICE_ACCOUNT_JSON_PATH` или `GOOGLE_APPLICATION_CREDENTIALS`. Подробности — `docs/push-notifications.md`.
+
 ---
 
 ## 0. Весь стек в Docker (UI + API + PostgreSQL)
