@@ -57,7 +57,10 @@ export function useMedicationBrowserReminders(medications: MedicationDose[] | un
     [medications],
   )
   const medsRef = useRef<MedicationDose[] | undefined>(medications)
-  medsRef.current = medications
+
+  useEffect(() => {
+    medsRef.current = medications
+  }, [medications])
 
   useEffect(() => {
     if (!enabled || typeof Notification === 'undefined') return

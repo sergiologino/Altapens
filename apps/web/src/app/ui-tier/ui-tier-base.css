@@ -1,0 +1,30 @@
+/* Базовые токены тиров; конкретные «поджимы» в compat-overrides.css (подгружаемый чанк). */
+html[data-ui-tier='compact'] {
+  --ui-space-factor: 0.82;
+  --ui-font-bump: 0.04rem;
+  --ui-tap-min: 46px;
+}
+
+html[data-ui-tier='cozy'] {
+  --ui-space-factor: 0.92;
+  --ui-font-bump: 0.06rem;
+  --ui-tap-min: 48px;
+}
+
+html[data-ui-tier='standard'] {
+  --ui-space-factor: 1;
+  --ui-font-bump: 0;
+  --ui-tap-min: 44px;
+}
+
+html[data-ui-legacy='true'] {
+  --ui-tap-min: 48px;
+}
+
+html[data-ui-tier='compact'] :where(body) {
+  font-size: calc(1rem + var(--ui-font-bump, 0));
+}
+
+html[data-ui-tier='cozy'] :where(body) {
+  font-size: calc(1rem + var(--ui-font-bump, 0));
+}

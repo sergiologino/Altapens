@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core'
-import { useCallback, useLayoutEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { LaunchSplashScreen } from './LaunchSplashScreen'
 
 /** Версия ключа: при смене заставки увеличить */
@@ -22,16 +22,9 @@ type Props = {
  * Браузер: один раз за вкладку, если уже видели — пропуск до первого paint (useLayoutEffect).
  */
 export function LaunchSplashGate({ children }: Props) {
-  const [finished, setFinished] = useState(false)
-
-  useLayoutEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      return
-    }
-    if (shouldSkipFromBrowserStorage()) {
-      setFinished(true)
-    }
-  }, [])
+  const [finished, setFinished] = useState(
+    () => !Capacitor.isNativePlatform() && shouldSkipFromBrowserStorage(),
+  )
 
   const handleComplete = useCallback(() => {
     if (!Capacitor.isNativePlatform()) {

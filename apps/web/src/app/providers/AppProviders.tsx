@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { useAuthStore } from '@/app/store/auth-store'
+import { UiTierProvider } from '@/app/ui-tier/UiTierContext'
 import { YandexMetrika } from '@/shared/analytics/YandexMetrika'
 import { useBackendApi } from '@/shared/api/api-base'
 
@@ -39,7 +40,7 @@ export const AppProviders = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>
       <YandexMetrika />
       <NativePushBridge />
-      {children}
+      <UiTierProvider>{children}</UiTierProvider>
     </QueryClientProvider>
   </HelmetProvider>
 )

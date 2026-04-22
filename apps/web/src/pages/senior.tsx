@@ -335,7 +335,9 @@ export const SeniorProfilePage = () => {
 
   useEffect(() => {
     if (typeof Notification === 'undefined') return
-    setNotifyPermission(Notification.permission)
+    queueMicrotask(() => {
+      setNotifyPermission(Notification.permission)
+    })
   }, [browserMedicationReminders])
 
   const requestBrowserNotifications = async () => {

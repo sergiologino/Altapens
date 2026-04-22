@@ -1,0 +1,104 @@
+/* Подключается отдельным чанком после детекции: узкие экраны + старый Android. */
+
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: max(var(--space-2), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--space-2), env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+
+html[data-ui-tier='compact'] .portal-page,
+html[data-ui-tier='cozy'] .portal-page,
+html[data-ui-legacy='true'] .portal-page,
+html[data-ui-tier='compact'] .app-shell,
+html[data-ui-tier='cozy'] .app-shell {
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
+html[data-ui-tier='compact'] .app-topbar,
+html[data-ui-tier='cozy'] .app-topbar,
+html[data-ui-legacy='true'] .app-topbar {
+  padding: var(--space-2) var(--space-3);
+}
+
+html[data-ui-tier='compact'] .section-title,
+html[data-ui-tier='cozy'] .section-title,
+html[data-ui-legacy='true'] .section-title {
+  font-size: clamp(0.95rem, 3.2vw, 1.1rem) !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+html[data-ui-tier='compact'] .text-input,
+html[data-ui-tier='cozy'] .text-input,
+html[data-ui-legacy='true'] .text-input {
+  min-height: var(--ui-tap-min, 48px) !important;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  font-size: 1rem;
+}
+
+html[data-ui-tier='compact'] .form-grid,
+html[data-ui-tier='cozy'] .form-grid {
+  gap: var(--space-3);
+}
+
+html[data-ui-legacy='true'] .surface-card,
+html[data-ui-legacy='true'] .hero-panel {
+  backdrop-filter: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Опекун: нижняя панель + скролл-отступ */
+html[data-ui-tier='compact'] .caregiver-app-scroll,
+html[data-ui-tier='cozy'] .caregiver-app-scroll,
+html[data-ui-legacy='true'] .caregiver-app-scroll {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+html[data-ui-tier='compact'] .caregiver-bottom-nav,
+html[data-ui-tier='cozy'] .caregiver-bottom-nav,
+html[data-ui-legacy='true'] .caregiver-bottom-nav {
+  padding-left: var(--space-1);
+  padding-right: var(--space-1);
+}
+
+html[data-ui-tier='compact'] .caregiver-bottom-nav-link,
+html[data-ui-tier='cozy'] .caregiver-bottom-nav-link,
+html[data-ui-legacy='true'] .caregiver-bottom-nav-link {
+  min-height: var(--ui-tap-min, 48px);
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Настройки: строки с кнопкой */
+html[data-ui-tier='compact'] .settings-nav-row,
+html[data-ui-tier='cozy'] .settings-nav-row,
+html[data-ui-legacy='true'] .settings-nav-row {
+  padding: var(--space-3) var(--space-4);
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex-direction: column;
+}
+
+html[data-ui-tier='compact'] .settings-nav-row .button-link,
+html[data-ui-tier='cozy'] .settings-nav-row .button-link,
+html[data-ui-legacy='true'] .settings-nav-row .button-link {
+  width: 100% !important;
+  justify-content: center;
+  min-height: var(--ui-tap-min, 48px);
+  align-self: stretch;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Онбординг */
+html[data-ui-tier='compact'] .onboarding-card,
+html[data-ui-tier='cozy'] .onboarding-card {
+  max-height: min(calc(100dvh - 4.5rem - env(safe-area-inset-bottom, 0px)), 100%);
+}

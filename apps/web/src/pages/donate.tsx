@@ -102,12 +102,13 @@ export const DonateReturnPage = () => {
   const donationId = params.get('donationId')
   const demo = params.get('demo') === '1'
 
-  const [status, setStatus] = useState<'loading' | 'ok' | 'pending' | 'fail' | 'canceled'>('loading')
+  const [status, setStatus] = useState<'loading' | 'ok' | 'pending' | 'fail' | 'canceled'>(() =>
+    !donationId || !isDonationsApiAvailable() ? 'fail' : 'loading',
+  )
   const [amountRub, setAmountRub] = useState<number | null>(null)
 
   useEffect(() => {
     if (!donationId || !isDonationsApiAvailable()) {
-      setStatus('fail')
       return
     }
     let cancelled = false
