@@ -7,7 +7,11 @@ export const authUserSchema = z.object({
   role: userRoleSchema,
   fullName: z.string(),
   email: z.email(),
-  phone: z.string().optional(),
+  /** Backend может отдать null или не передавать поле */
+  phone: z
+    .union([z.string(), z.null()])
+    .optional()
+    .transform((v) => (v == null ? undefined : v)),
 })
 
 export const authActionResultSchema = z.object({
@@ -48,7 +52,8 @@ export const careInviteSchema = z.object({
   id: z.string(),
   code: z.string(),
   createdByUserId: z.string(),
-  createdByName: z.string(),
+  /** API может не отдавать имя — подставляем пустую строку для UI */
+  createdByName: z.string().nullish().transform((v) => v ?? ''),
   targetRole: userRoleSchema,
   status: inviteStatusSchema,
   expiresAt: z.string(),

@@ -27,6 +27,7 @@ import type { SeniorOverview } from '@altapens/shared-types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/app/store/auth-store'
 import { apiBaseUrl, useBackendApi } from '@/shared/api/api-base'
+import { appFetch } from '@/shared/api/app-fetch'
 
 const parseJson = async <T>(response: Response, schema: { parse: (value: unknown) => T }) => {
   const payload = await response.json()
@@ -93,25 +94,25 @@ export interface CareApi {
 
 const httpCareApi: CareApi = {
   async listSeniors() {
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/seniors`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/seniors`, {
       headers: { ...withAuthHeaders() },
     })
     return parseJson(response, careUserSummaryListSchema)
   },
   async listCaregivers() {
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/caregivers`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/caregivers`, {
       headers: { ...withAuthHeaders() },
     })
     return parseJson(response, careUserSummaryListSchema)
   },
   async listInvites() {
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/invites`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/invites`, {
       headers: { ...withAuthHeaders() },
     })
     return parseJson(response, careInviteListSchema)
   },
   async getRelationship(id) {
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/relationships/${encodeURIComponent(id)}`,
       {
         headers: { ...withAuthHeaders() },
@@ -120,7 +121,7 @@ const httpCareApi: CareApi = {
     return parseJson(response, careRelationshipSchema)
   },
   async listMedications(seniorUserId) {
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/medications${medicationsQuery(seniorUserId)}`,
       {
         headers: { ...withAuthHeaders(), 'Content-Type': 'application/json' },
@@ -129,7 +130,7 @@ const httpCareApi: CareApi = {
     return parseJson(response, medicationListSchema)
   },
   async listTodayDoses(seniorUserId) {
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/medications/today-doses${medicationsQuery(seniorUserId)}`,
       {
         headers: { ...withAuthHeaders() },
@@ -139,7 +140,7 @@ const httpCareApi: CareApi = {
   },
   async createMedication(body) {
     const parsed = createMedicationRequestSchema.parse(body)
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/medications`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/medications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const httpCareApi: CareApi = {
     return parseJson(response, medicationResponseSchema)
   },
   async listCheckins(seniorUserId, limit = 30) {
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/checkins${checkinsQuery(seniorUserId, limit)}`,
       {
         headers: { ...withAuthHeaders() },
@@ -160,7 +161,7 @@ const httpCareApi: CareApi = {
   },
   async createCheckin(body) {
     const parsed = recordWellbeingCheckinRequestSchema.parse(body)
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/checkins`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/checkins`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -171,7 +172,7 @@ const httpCareApi: CareApi = {
     return parseJson(response, wellbeingCheckinSchema)
   },
   async listTimeline(seniorUserId, limit = 30) {
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/timeline${timelineQuery(seniorUserId, limit)}`,
       {
         headers: { ...withAuthHeaders() },
@@ -181,7 +182,7 @@ const httpCareApi: CareApi = {
   },
   async recordMedicationIntake(body) {
     const parsed = recordMedicationIntakeRequestSchema.parse(body)
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/medications/intake`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/medications/intake`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -233,7 +234,7 @@ const neuralSpeechResponseSchema = z.object({
 
 /** Нейро-озвучка через AltaPens backend → noteapp-ai-integration (VITE_NEURAL_TTS и настроенный AI_INTEGRATION_* на сервере). */
 export async function postNeuralSpeech(text: string): Promise<{ audioBase64: string; mimeType: string }> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/care/assistant/neural-speech`, {
+  const response = await appFetch(`${apiBaseUrl}/api/v1/care/assistant/neural-speech`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -255,7 +256,7 @@ export async function postNeuralSpeech(text: string): Promise<{ audioBase64: str
 }
 
 export async function postAssistantChat(message: string): Promise<AssistantChatResult> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/care/assistant/chat`, {
+  const response = await appFetch(`${apiBaseUrl}/api/v1/care/assistant/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { createDonationRequestSchema } from '@altapens/api-contracts'
 import { ActionButton, SectionCard, SectionHeader } from '@/shared/ui/primitives'
@@ -19,6 +20,7 @@ const formSchema = z.object({
 })
 
 export const DonatePage = () => {
+  const navigate = useNavigate()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const apiOk = isDonationsApiAvailable()
@@ -30,6 +32,14 @@ export const DonatePage = () => {
 
   return (
     <div className="portal-page donate-page">
+      <div className="donate-page-header">
+        <button type="button" className="donate-back-link" onClick={() => navigate(-1)}>
+          ← Назад
+        </button>
+        <Link to="/start" className="donate-back-link">
+          На главный экран
+        </Link>
+      </div>
       <SectionCard>
         <SectionHeader
           eyebrow="Поддержка AltaPens"
@@ -87,6 +97,7 @@ export const DonatePage = () => {
 }
 
 export const DonateReturnPage = () => {
+  const navigate = useNavigate()
   const params = new URLSearchParams(window.location.search)
   const donationId = params.get('donationId')
   const demo = params.get('demo') === '1'
@@ -124,6 +135,14 @@ export const DonateReturnPage = () => {
   if (!donationId) {
     return (
       <div className="portal-page donate-page">
+        <div className="donate-page-header">
+          <button type="button" className="donate-back-link" onClick={() => navigate(-1)}>
+            ← Назад
+          </button>
+          <Link to="/start" className="donate-back-link">
+            На главный экран
+          </Link>
+        </div>
         <SectionCard>
           <p>Не указан платёж. Вернитесь на страницу пожертвования.</p>
         </SectionCard>
@@ -133,6 +152,14 @@ export const DonateReturnPage = () => {
 
   return (
     <div className="portal-page donate-page">
+      <div className="donate-page-header">
+        <button type="button" className="donate-back-link" onClick={() => navigate(-1)}>
+          ← Назад
+        </button>
+        <Link to="/start" className="donate-back-link">
+          На главный экран
+        </Link>
+      </div>
       <SectionCard>
         <SectionHeader
           eyebrow="Оплата"

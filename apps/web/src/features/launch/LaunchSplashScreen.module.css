@@ -1,0 +1,352 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(1.5rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgba(232, 180, 160, 0.35), transparent 55%),
+    radial-gradient(circle at 15% 85%, rgba(45, 127, 131, 0.12), transparent 40%),
+    radial-gradient(circle at 88% 70%, rgba(124, 92, 255, 0.1), transparent 38%),
+    linear-gradient(165deg, #faf6f0 0%, #f5efe6 45%, #f0e8de 100%);
+  overflow: hidden;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Иллюстрация splash: по краям градиент в прозрачность, центр остаётся читаемым */
+.heroArt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('/launch-splash.png');
+  background-repeat: no-repeat;
+  background-position: center 38%;
+  background-size: min(118vw, 520px) auto;
+  z-index: 0;
+  -webkit-mask-image: radial-gradient(
+    ellipse min(96%, 92vw) min(92%, 88vh) at 50% 44%,
+    #000 18%,
+    rgba(0, 0, 0, 0.72) 42%,
+    rgba(0, 0, 0, 0.28) 62%,
+    rgba(0, 0, 0, 0.08) 74%,
+    transparent 82%
+  );
+  mask-image: radial-gradient(
+    ellipse min(96%, 92vw) min(92%, 88vh) at 50% 44%,
+    #000 18%,
+    rgba(0, 0, 0, 0.72) 42%,
+    rgba(0, 0, 0, 0.28) 62%,
+    rgba(0, 0, 0, 0.08) 74%,
+    transparent 82%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroArt {
+    background-position: center 40%;
+  }
+}
+
+.backdropExit {
+  animation: backdropFade 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdropExit {
+    animation: backdropFadeFast 0.25s ease-out forwards;
+  }
+}
+
+.orb {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(48px);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: orbFloat 7s ease-in-out infinite;
+}
+
+.orb1 {
+  width: min(72vw, 280px);
+  height: min(72vw, 280px);
+  left: -12%;
+  top: 18%;
+  background: rgba(232, 180, 160, 0.45);
+  animation-delay: 0s;
+}
+
+.orb2 {
+  width: min(60vw, 220px);
+  height: min(60vw, 220px);
+  right: -8%;
+  bottom: 22%;
+  background: rgba(212, 160, 140, 0.35);
+  animation-delay: -2.5s;
+}
+
+.orb3 {
+  width: min(50vw, 180px);
+  height: min(50vw, 180px);
+  left: 40%;
+  top: 55%;
+  background: rgba(220, 38, 38, 0.08);
+  animation-delay: -4s;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 22rem;
+}
+
+.glow {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(197, 48, 48, 0.22), transparent 68%);
+  pointer-events: none;
+  animation: glowPulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .glow {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.logoWrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 1.75rem;
+  animation: logoIn 1s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoWrap {
+    animation: logoInReduced 0.35s ease-out both;
+  }
+}
+
+.logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 6px 20px rgba(185, 28, 28, 0.12));
+  animation: logoFloat 3.2s ease-in-out 0.9s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo {
+    animation: none;
+  }
+}
+
+.slogan {
+  margin: 0;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 4.2vw, 1.65rem);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  color: rgba(55, 42, 38, 0.92);
+  text-shadow:
+    0 0 20px rgba(250, 246, 240, 0.95),
+    0 0 40px rgba(250, 246, 240, 0.75),
+    0 1px 2px rgba(255, 255, 255, 0.9);
+  animation: textRise 0.85s cubic-bezier(0.33, 1, 0.68, 1) 0.35s both;
+}
+
+.sub {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
+  font-weight: 500;
+  font-size: clamp(0.9rem, 3.2vw, 1rem);
+  line-height: 1.5;
+  color: rgba(80, 64, 58, 0.78);
+  text-shadow:
+    0 0 16px rgba(250, 246, 240, 0.92),
+    0 0 28px rgba(250, 246, 240, 0.65);
+  animation: textRise 0.85s cubic-bezier(0.33, 1, 0.68, 1) 0.55s both;
+}
+
+.brand {
+  margin-top: 1.75rem;
+  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(120, 95, 85, 0.55);
+  animation: textRise 0.85s cubic-bezier(0.33, 1, 0.68, 1) 0.75s both;
+}
+
+.hearts {
+  margin-top: 1.25rem;
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  animation: textRise 0.85s cubic-bezier(0.33, 1, 0.68, 1) 0.95s both;
+}
+
+.miniHeart {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #e8b4a0, #dc2626);
+  opacity: 0.45;
+  transform: rotate(45deg) scale(0.85);
+  animation: miniTwinkle 2s ease-in-out infinite;
+}
+
+.miniHeart:nth-child(2) {
+  animation-delay: 0.35s;
+  opacity: 0.35;
+}
+
+.miniHeart:nth-child(3) {
+  animation-delay: 0.7s;
+  opacity: 0.4;
+}
+
+.tapHint {
+  margin: 1.5rem 0 0;
+  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
+  font-size: var(--font-size-xs, 0.8125rem);
+  color: rgba(120, 95, 85, 0.55);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slogan,
+  .sub,
+  .brand,
+  .hearts {
+    animation: textRiseReduced 0.3s ease-out both;
+  }
+
+  .miniHeart {
+    animation: none;
+  }
+}
+
+@keyframes backdropFade {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes backdropFadeFast {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes orbFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(12px, -10px) scale(1.04);
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.12);
+    opacity: 0.75;
+  }
+}
+
+@keyframes logoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.65) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes logoInReduced {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes textRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes textRiseReduced {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes miniTwinkle {
+  0%,
+  100% {
+    transform: rotate(45deg) scale(0.85);
+    opacity: 0.35;
+  }
+  50% {
+    transform: rotate(45deg) scale(1);
+    opacity: 0.65;
+  }
+}

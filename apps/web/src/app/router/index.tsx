@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { RootLayout } from '@/app/router/RootLayout'
 import { AppEntryPage, PublicOnlyRoute, RequireRole } from '@/app/router/guards'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
@@ -55,6 +55,7 @@ const router = createBrowserRouter([
         path: '/auth',
         element: <AuthLayout />,
         children: [
+          { index: true, element: <Navigate to="/start" replace /> },
           {
             path: 'login',
             element: (

@@ -8,6 +8,7 @@ import {
 } from '@altapens/api-contracts'
 import { useAuthStore } from '@/app/store/auth-store'
 import { apiBaseUrl, useBackendApi } from '@/shared/api/api-base'
+import { appFetch } from '@/shared/api/app-fetch'
 
 const parseJson = async <T>(response: Response, schema: { parse: (value: unknown) => T }) => {
   const text = await response.text()
@@ -47,7 +48,7 @@ export async function createDonation(
     )
   }
   const body = createDonationRequestSchema.parse(payload)
-  const response = await fetch(`${apiBaseUrl}/api/v1/payments/donations`, {
+  const response = await appFetch(`${apiBaseUrl}/api/v1/payments/donations`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ export async function getDonationStatus(donationId: string): Promise<DonationSta
   if (!useBackendApi) {
     throw new Error('API недоступен')
   }
-  const response = await fetch(
+  const response = await appFetch(
     `${apiBaseUrl}/api/v1/payments/donations/${encodeURIComponent(donationId)}/status`,
   )
   return parseJson(response, donationStatusResponseSchema)

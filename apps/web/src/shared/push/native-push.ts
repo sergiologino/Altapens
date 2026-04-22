@@ -1,14 +1,23 @@
 import { registerDevicePushRequestSchema } from '@altapens/api-contracts'
 import { apiBaseUrl } from '@/shared/api/api-base'
+import { appFetch } from '@/shared/api/app-fetch'
 
 /**
  * Регистрация FCM/APNs токена в backend после входа (только нативная оболочка Capacitor).
  * В браузере не вызывается (isNativePlatform === false).
+ *
+ * На Android FCM требует `google-services.json` и плагин google-services; без этого
+ * `PushNotifications.register()` падает в нативном потоке (IllegalStateException: FirebaseApp).
+ * Включайте явно: VITE_ENABLE_NATIVE_PUSH=true при готовой конфигурации push.
  */
 export async function initNativePushAfterAuth(
   accessToken: string,
   signal: AbortSignal,
 ): Promise<void> {
+  if (import.meta.env.VITE_ENABLE_NATIVE_PUSH !== 'true') {
+    return
+  }
+
   const { Capacitor } = await import('@capacitor/core')
   if (!Capacitor.isNativePlatform()) {
     return
@@ -33,7 +42,7 @@ export async function initNativePushAfterAuth(
       platform: parsedPlatform,
       token: rawToken,
     })
-    const response = await fetch(`${apiBaseUrl}/api/v1/notifications/devices`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/notifications/devices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
