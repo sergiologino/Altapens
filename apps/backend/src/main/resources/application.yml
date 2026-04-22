@@ -50,6 +50,7 @@ app:
       - "http://127.0.0.1:*"
       - "https://altapens.ru"
       - "https://www.altapens.ru"
+      - "https://app.altapens.ru"
   security:
     jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
     issuer: altacare-backend
@@ -72,3 +73,15 @@ app:
     openai:
       model: ${ALTAPENS_TTS_MODEL:${OPENAI_TTS_MODEL:}}
       voice: ${ALTAPENS_TTS_VOICE:${OPENAI_TTS_VOICE:nova}}
+  # FCM: отправка push (пропущенный приём и др.). Включайте только при наличии ключа сервисного аккаунта Firebase.
+  push:
+    fcm:
+      enabled: ${APP_PUSH_FCM_ENABLED:false}
+      missed-check-interval-ms: ${APP_PUSH_FCM_MISSED_CHECK_INTERVAL_MS:120000}
+      service-account-json-path: ${APP_PUSH_FCM_SERVICE_ACCOUNT_JSON_PATH:}
+  # ЮKassa: донаты (при enabled=false создаётся демо-платёж без вызова API)
+  yookassa:
+    enabled: ${APP_YOOKASSA_ENABLED:false}
+    shop-id: ${APP_YOOKASSA_SHOP_ID:}
+    secret-key: ${APP_YOOKASSA_SECRET_KEY:}
+    public-app-url: ${APP_PUBLIC_WEB_URL:http://localhost:5173}

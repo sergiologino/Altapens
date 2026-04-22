@@ -44,19 +44,20 @@ const latestCheckinOnDay = (
 const timeShort = (iso: string) =>
   new Intl.DateTimeFormat('ru-RU', { timeStyle: 'short' }).format(new Date(iso))
 
-const slotWord = (n: number): string => {
+/** Склонение «приём» для текстов сводки (без жаргона «слот»). */
+const intakeCountWord = (n: number): string => {
   const m = n % 100
   const m10 = n % 10
-  if (m >= 11 && m <= 14) return 'слотов'
-  if (m10 === 1) return 'слот'
-  if (m10 >= 2 && m10 <= 4) return 'слота'
-  return 'слотов'
+  if (m >= 11 && m <= 14) return 'приёмов'
+  if (m10 === 1) return 'приём'
+  if (m10 >= 2 && m10 <= 4) return 'приёма'
+  return 'приёмов'
 }
 
 const comparePlannedTime = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true })
 
 /** Если бэкенд ещё отдаёт upcoming, а время слота уже прошло — считаем пропуском (как на сервере). */
-function effectiveDoseStatus(d: MedicationDoseDto, now: Date): MedicationDoseDto['status'] {
+export function effectiveDoseStatus(d: MedicationDoseDto, now: Date): MedicationDoseDto['status'] {
   if (d.status !== 'upcoming') {
     return d.status
   }
@@ -105,7 +106,7 @@ export function summarizeMedicationLine(doses: MedicationDoseDto[], now: Date = 
 
   const total = doses.length
   const rest = upcoming + snoozed
-  const progress = `Сегодня ${total} ${slotWord(total)}: принято ${taken}, пропущено ${missed}, ожидается ${rest}`
+  const progress = `Сегодня ${total} ${intakeCountWord(total)}: принято ${taken}, пропущено ${missed}, ожидается ${rest}`
 
   const pending = doses.filter((d) => {
     const st = effectiveDoseStatus(d, now)

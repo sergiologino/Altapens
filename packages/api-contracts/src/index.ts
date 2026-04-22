@@ -7,7 +7,11 @@ export const authUserSchema = z.object({
   role: userRoleSchema,
   fullName: z.string(),
   email: z.email(),
-  phone: z.string().optional(),
+  /** Backend может отдать null или не передавать поле */
+  phone: z
+    .union([z.string(), z.null()])
+    .optional()
+    .transform((v) => (v == null ? undefined : v)),
 })
 
 export const authActionResultSchema = z.object({
@@ -48,7 +52,8 @@ export const careInviteSchema = z.object({
   id: z.string(),
   code: z.string(),
   createdByUserId: z.string(),
-  createdByName: z.string(),
+  /** API может не отдавать имя — подставляем пустую строку для UI */
+  createdByName: z.string().nullish().transform((v) => v ?? ''),
   targetRole: userRoleSchema,
   status: inviteStatusSchema,
   expiresAt: z.string(),
@@ -174,6 +179,30 @@ export const recordMedicationIntakeRequestSchema = z.object({
   status: z.enum(['taken', 'missed', 'snoozed']),
 })
 
+/** POST /api/v1/notifications/devices — регистрация FCM/Web push токена (JWT) */
+export const registerDevicePushRequestSchema = z.object({
+  platform: z.enum(['android', 'ios', 'web']),
+  token: z.string().min(1).max(4096),
+})
+
+/** POST /api/v1/payments/donations — донат через ЮKassa */
+export const createDonationRequestSchema = z.object({
+  amountRub: z.number().int().min(100).max(1_000_000),
+})
+
+export const createDonationResponseSchema = z.object({
+  donationId: z.string().uuid(),
+  confirmationUrl: z.string().min(1),
+  demoMode: z.boolean(),
+})
+
+export const donationStatusResponseSchema = z.object({
+  donationId: z.string().uuid(),
+  status: z.enum(['pending', 'succeeded', 'canceled']),
+  amountRub: z.number().int(),
+  demoMode: z.boolean(),
+})
+
 export type AuthActionResultDto = z.infer<typeof authActionResultSchema>
 export type AuthUserDto = z.infer<typeof authUserSchema>
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>
@@ -195,3 +224,7 @@ export type WellbeingCheckinDto = z.infer<typeof wellbeingCheckinSchema>
 export type RecordWellbeingCheckinRequestDto = z.infer<typeof recordWellbeingCheckinRequestSchema>
 export type TimelineItemDto = z.infer<typeof timelineItemSchema>
 export type RecordMedicationIntakeRequestDto = z.infer<typeof recordMedicationIntakeRequestSchema>
+export type RegisterDevicePushRequestDto = z.infer<typeof registerDevicePushRequestSchema>
+export type CreateDonationRequestDto = z.infer<typeof createDonationRequestSchema>
+export type CreateDonationResponseDto = z.infer<typeof createDonationResponseSchema>
+export type DonationStatusResponseDto = z.infer<typeof donationStatusResponseSchema>

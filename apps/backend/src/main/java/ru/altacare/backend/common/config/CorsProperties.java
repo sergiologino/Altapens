@@ -13,7 +13,8 @@ public record CorsProperties(List<String> allowedOriginPatterns) {
                                 "http://localhost:*",
                                 "http://127.0.0.1:*",
                                 "https://altapens.ru",
-                                "https://www.altapens.ru")
+                                "https://www.altapens.ru",
+                                "https://app.altapens.ru")
                         : List.copyOf(allowedOriginPatterns);
     }
 }

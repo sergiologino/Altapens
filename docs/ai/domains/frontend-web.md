@@ -5,7 +5,7 @@
 
 ## Реализовано сейчас
 - workspace-структура для фронтенда
-- пакет `api-contracts` с zod-схемами auth/care DTO
+- пакет `api-contracts` с zod-схемами auth/care/payments DTO
 - дизайн-токены в отдельном пакете
 - shared типы доменной модели в отдельном пакете
 - senior shell и caregiver shell
@@ -20,6 +20,7 @@
 - caregiver-экраны: dashboard, seniors, senior detail, invite create, medication form, events, AI, settings
 - форма настройки лекарства на `React Hook Form + Zod`
 - **голос senior:** `features/voice` — озвучка маршрутов, удержание кнопки для распознавания (ru-RU), интенты → checkin / medications intake / SOS; при отключённой озвучке в профиле панель скрыта
+- **бренд и донаты:** favicon/логотип `public/favicon.svg`, `brand-logo.svg`; `AppTopBar` + `BrandLogo` в боковой навигации; страницы `/donate`, `/donate/return`; `shared/api/payments-client.ts` (нужен backend URL); SEO для `/donate` в `shared/seo/app-seo.ts`
 
 ## UX-принципы
 - senior: один экран = одна задача, крупные кнопки, высокий контраст, крупный текст, при необходимости голос
@@ -30,11 +31,12 @@
 ## Ограничения сейчас
 - курсы, слоты, фиксация приёма, чек-ины и лента (частично) — с API при подключённом backend; лента «События» у опекуна использует первого подопечного из списка; история приёмов на экране «История» пока совпадает со слотами на сегодня
 - без backend URL экраны используют полностью локальный mock; persisted store остаётся для offline-демо auth/invite
-- realtime, notifications и persistence backend-уровня еще не подключены
-- landing и mobile-контуры еще не начинались
+- realtime и persistence backend-уровня еще не подключены; **локальные браузерные напоминания** о приёме лекарств для senior (`Notification` + настройка в профиле) работают при открытом приложении; серверный push — см. `docs/push-notifications.md`
+- **landing** вынесен в `apps/landing` (Next.js), не в `apps/web`
+- **mobile** — отдельный репозиторий Capacitor; тот же SPA (`build:web:mobile`), см. `docs/ai/domains/mobile-app.md`
 
 ## Следующие логичные шаги
 - вынести больше UI-примитивов в reusable пакет
 - подключить к backend лекарства, чек-ины, события по мере готовности API
 - расширить `care-client` и контракты под новые домены
-- подготовить landing и общую дизайн-систему для него
+- расширять таблицу SEO в `shared/seo/app-seo.ts` при новых публичных маршрутах; при необходимости выровнять токены лендинга с `packages/design-tokens`

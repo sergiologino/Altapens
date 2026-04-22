@@ -67,6 +67,34 @@ html[data-theme='dark'] .shell-caregiver .hero-card {
     var(--color-bg-caregiver);
 }
 
+html[data-theme='dark'] .caregiver-bottom-nav {
+  background: rgba(20, 20, 28, 0.94);
+}
+
+html[data-theme='dark'] .caregiver-metric-chip,
+html[data-theme='dark'] .caregiver-senior-chip {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme='dark'] .caregiver-overview-card {
+  background:
+    linear-gradient(145deg, rgba(34, 32, 48, 0.96), rgba(24, 24, 34, 0.92)),
+    var(--color-bg-caregiver);
+}
+
+html[data-theme='dark'] .settings-session-block {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme='dark'] .caregiver-invite-banner {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme='dark'] .invite-code-panel {
+  background: rgba(124, 92, 255, 0.12);
+  border-color: rgba(157, 139, 255, 0.35);
+}
+
 html[data-theme='dark'] .danger-panel {
   background:
     linear-gradient(145deg, rgba(90, 40, 44, 0.45), rgba(26, 24, 28, 0.94)),

@@ -1,10 +1,13 @@
 import { AppProviders } from '@/app/providers/AppProviders'
 import { AppRouter } from '@/app/router'
+import { LaunchSplashGate } from '@/features/launch'
 
 function App() {
   return (
     <AppProviders>
-      <AppRouter />
+      <LaunchSplashGate>
+        <AppRouter />
+      </LaunchSplashGate>
     </AppProviders>
   )
 }

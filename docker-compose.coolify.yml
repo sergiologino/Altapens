@@ -4,7 +4,8 @@ services:
     environment:
       POSTGRES_DB: altacare
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: TempPass_123456789
+      # Один и тот же пароль в Coolify для postgres и backend (DB_PASSWORD). POSTGRES_PASSWORD читается только при ПЕРВОМ создании тома; смена env не меняет пароль в уже существующем pens_pgdata — см. комментарий у backend.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
     volumes:
       - pens_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,9 +20,15 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/altacare
       DB_USERNAME: postgres
-      DB_PASSWORD: TempPass_123456789
+      # Должен совпадать с паролем внутри Postgres. Если меняли POSTGRES_PASSWORD после первого деплоя: либо ALTER USER в БД под старым паролем, либо удалить том pens_pgdata (потеря данных).
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: "8080"
+      # Донаты ЮKassa: return_url ведёт на SPA (должен совпадать с публичным URL приложения)
+      APP_PUBLIC_WEB_URL: ${APP_PUBLIC_WEB_URL:-https://app.altapens.ru}
+      APP_YOOKASSA_ENABLED: ${APP_YOOKASSA_ENABLED:-false}
+      APP_YOOKASSA_SHOP_ID: ${APP_YOOKASSA_SHOP_ID:-}
+      APP_YOOKASSA_SECRET_KEY: ${APP_YOOKASSA_SECRET_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,14 +42,31 @@ services:
       args:
         VITE_API_SAME_ORIGIN: "true"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      landing:
+        condition: service_started
     expose:
       - "80"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.pens.rule=Host(`pens.altacod.com`)
-      - traefik.http.routers.pens.entrypoints=http
-      - traefik.http.services.pens.loadbalancer.server.port=80
+      # TLS снаружи на Caddy (VDS); до Coolify — HTTP с подменой Host на *.localhost.sslip.io.
+      # Роутеры только на entrypoint http и на реальные Coolify-имена, иначе Host не совпадает с rule.
+      - 'traefik.http.routers.pens-web.rule=Host(`altapens-web.localhost.sslip.io`) || Host(`altapens-land.localhost.sslip.io`) || Host(`altapens.ru`) || Host(`www.altapens.ru`) || Host(`app.altapens.ru`)'
+      - traefik.http.routers.pens-web.entrypoints=http
+      - traefik.http.routers.pens-web.service=pens-app
+      - traefik.http.services.pens-app.loadbalancer.server.port=80
 
+  # SSR-лендинг: только внутри сети compose (nginx на web проксирует сюда для apex/www).
+  landing:
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://altapens.ru}
+        # Ссылка на SPA; если в DNS нет A/AAAA для app — браузер не откроет поддомен. См. apps/landing/.env.example
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://app.altapens.ru}
+    expose:
+      - "3000"
 volumes:
   pens_pgdata:

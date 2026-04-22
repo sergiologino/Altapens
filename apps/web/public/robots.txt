@@ -1,0 +1,7 @@
+# Замените host на фактический домен приложения при деплое.
+User-agent: *
+Allow: /
+Disallow: /senior/
+Disallow: /caregiver/
+
+Sitemap: https://app.altapens.ru/sitemap.xml

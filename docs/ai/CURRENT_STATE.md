@@ -3,9 +3,9 @@
 ## Факты
 - Проект `AltaPens` инициализирован как отдельный продукт в `E:\1_MyProjects\AltaCare\AltaPens`
 - Создан базовый набор AI-memory файлов в `docs/ai/`
-- Поднят frontend workspace с `apps/web`, `packages/api-contracts`, `packages/design-tokens` и `packages/shared-types`
+- Поднят frontend workspace с `apps/web`, `apps/landing`, `packages/api-contracts`, `packages/design-tokens` и `packages/shared-types`
 - Поднят backend в `apps/backend` на `Spring Boot`
-- `apps/web` реализован на `React + TypeScript + Vite`
+- `apps/web` реализован на `React + TypeScript + Vite`; для SEO: `index.html` и `public/robots.txt` / `public/sitemap.xml`, `react-helmet-async` (`DocumentHead` + таблица `shared/seo/app-seo.ts`), для маршрутов `/senior/*` и `/caregiver/*` — `noindex`; см. `apps/web/.env.example` (`VITE_PUBLIC_SITE_URL`)
 - Во frontend добавлены две отдельные оболочки интерфейса: `senior` и `caregiver`
 - Добавлены auth-экраны: login, register, invite accept
 - Добавлен role-aware routing с guard-ами для `senior` и `caregiver`
@@ -32,9 +32,12 @@
   - `GET/POST /api/v1/care/medications`, `GET /api/v1/care/medications/today-doses`, `POST /api/v1/care/medications/intake` (курс, слоты на день, фиксация приёма по слоту)
   - `POST/GET /api/v1/care/checkins` (самочувствие подопечного; опекун — с `seniorUserId`)
   - `GET /api/v1/care/timeline` (объединённая лента чек-инов и приёмов лекарств; опекун — с `seniorUserId`)
-- В backend добавлены Flyway миграции и JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`, `medications`, `wellbeing_checkins`, `medication_intakes`
+  - `POST /api/v1/notifications/devices` — регистрация push-токена устройства (JWT); таблица `device_push_tokens` (`V4`); дедупликация отправок `notification_send_log` (`V5`); при `app.push.fcm.enabled=true` и ключе Firebase — FCM и планировщик пропущенных приёмов (`notify_on_missed` → опекуны)
+- CORS в backend (`application.yml` / `CorsProperties`): в т.ч. `https://altapens.ru`, `https://www.altapens.ru`, `https://app.altapens.ru` (поддомен приложения) и localhost для разработки
+- В backend добавлены Flyway миграции и JPA-модели для `users`, `user_roles`, `senior_profiles`, `caregiver_profiles`, `care_invites`, `care_relationships`, `medications`, `wellbeing_checkins`, `medication_intakes`, `device_push_tokens`
 - В backend есть demo seed data для `Анна Смирнова` caregiver и `Иван Иванович` senior
 - Frontend auth client умеет работать через HTTP adapter при наличии `VITE_API_BASE_URL`, сохраняя fallback на local adapter
+- **Донаты (ЮKassa):** backend — `POST /api/v1/payments/donations` (сумма `amountRub` ≥ 100), `GET /api/v1/payments/donations/{id}/status`; при `APP_YOOKASSA_ENABLED=false` демо-платёж без вызова API; web — `/donate`, `/donate/return`, кнопка «Поддержать проект» в `AppTopBar` на всех страницах; мобильная оболочка получает тот же UI после `build:web:mobile`; прод: `APP_PUBLIC_WEB_URL` на backend должен совпадать с публичным URL SPA
 - Реализованы базовые экраны и навигация для MVP-потоков:
   - senior: home, today, assistant, history, profile, SOS, anti-scam quick actions
   - caregiver: dashboard, seniors list, senior detail, invite create, medication form, events, AI, settings
@@ -42,15 +45,21 @@
 - При `VITE_API_BASE_URL` (или same-origin): care API для **сети заботы**, **лекарств** (в т.ч. фиксация приёма), **чек-инов самочувствия** и **ленты событий** (для опекуна — по первому подопечному из списка); история приёмов на экране «История» по-прежнему совпадает со слотами на сегодня до отдельного API истории; auth/invite-flow — typed client + локальный store
 - Backend integration tests на `auth` и `care_network` проходят на H2 test-profile
 - Дизайн-система использует кастомные theme tokens, парную типографику, многослойные тени и отдельные роли по visual tone
+- **Напоминания (web, senior):** браузерные уведомления по слотам лекарств — разрешение и вкл/выкл в «Профиль»; логика `features/medication-reminders`, хранение предпочтений `reminder-prefs-store` (persist); без открытой вкладки не работают — серверный push по-прежнему в плане (`docs/push-notifications.md`)
+- **Экран входа:** убран боковой блок с тестовыми аккаунтами; формы выровнены по центру (`auth-panel-sole`)
 - Сборка `npm run build:web` и unit-тесты `npm run test:web` (Vitest, маппинг care-dashboard) проходят успешно
+- **Лендинг:** `apps/landing` — Next.js 15 (App Router), `output: 'standalone'`; hero `public/landing_picture.webp`; фирменный знак `public/brand-logo.svg` / `favicon.svg` (сердце в ладонях); маршруты `/dlya-pensionerov`, `/dlya-blizkih` с SEO в `src/lib/seo-copy.ts`; обзор экранов с заглушками `public/placeholders/*.png`, клик открывает модальный просмотр (`LightboxImage`); скрытый GEO `.geoHidden`; Яндекс.Метрика — `YandexMetrika.tsx`; в шапке — ссылка «Поддержать проект» на `${NEXT_PUBLIC_APP_URL}/donate`; **Docker:** `docker/landing.Dockerfile`, сервис `landing` в `docker-compose.yml` (порт **3081:3000**) и в `docker-compose.coolify.yml`; **прод с внешним reverse proxy (Caddy на VDS → домашний Coolify):** TLS на edge, до Traefik — HTTP; в Coolify Domains — `*.localhost.sslip.io`; Traefik у сервиса `web` — роутер на `entrypoints=http` с `Host` в т.ч. `altapens-web` / `altapens-land` sslip и запасом под публичные имена; в `docker/nginx.conf` у SPA в `server_name` добавлен `altapens-web.localhost.sslip.io` (подмена `Host` с edge); переменные см. `apps/landing/.env.example`; `dev:landing`, `build:landing`; `convert-hero` при наличии `landing_source.png`
 - Сборка и тесты backend: из `apps/backend` через Gradle Wrapper (`gradlew` / `gradlew.bat`), дистрибутив Gradle в репозиторий не коммитится
 - Runtime backend требует PostgreSQL `altacare`: профиль **`local`** — подключение к уже запущенной БД; профиль **`dev`** — автозапуск PostgreSQL в Docker через `spring-boot-docker-compose` и `compose-dev-postgres.yml` на classpath (см. `RUN_LOCAL.md`); интеграционные тесты по-прежнему на H2
 - В корне репозитория: `RUN_LOCAL.md`, корневой `docker-compose.yml` (полный стек или только postgres); для JVM из IDE — профиль `dev` и compose-файл в `apps/backend/src/main/resources/`
+- **Мобильное приложение (отдельный репозиторий):** `E:\1_MyProjects\AltaCare\Mobile_version` — Capacitor 7, в WebView загружается та же production-сборка `apps/web`, что и для web (`npm run build:web:mobile` в AltaPens, затем `prepare:www` в Mobile_version). Android: `minSdk` 31 (12+), см. `Mobile_version/android/variables.gradle`. Подробности — `docs/ai/domains/mobile-app.md`. **Регистрация FCM-токена:** `@capacitor/push-notifications` + `apps/web/src/shared/push/native-push.ts` → `POST /api/v1/notifications/devices` при входе; для реального токена на Android нужен Firebase/`google-services.json`. **Отправка** push с сервера — по-прежнему в плане (`docs/push-notifications.md`)
 
 ## Планируемое (спецификации)
 - **Голосовой режим senior (двусторонний):** реализован базовый контур в `apps/web/src/features/voice/` (TTS/STT, парсер фраз `voice-intents`, панель `SeniorVoiceShell` в layout senior); подробности и этапы расширения — `docs/ai/specs/voice-mode-senior.md`. **MCP/внешние источники** — позже, после стабилизации голоса (см. §11 той же спецификации).
+- **Аналитика:** Яндекс.Метрика (счётчик `108547150`) подключена в `apps/landing` (`YandexMetrika`) и в `apps/web` (`shared/analytics/YandexMetrika`); отключение локально: `NEXT_PUBLIC_YANDEX_METRIKA_DISABLED` / `VITE_YANDEX_METRIKA_DISABLED`. Google Tag — позже, когда будет готов счётчик.
 
 ## Что поддерживать в актуальном состоянии
 - фактическую структуру backend/frontend/landing
 - реализованные пользовательские сценарии
 - текущие ограничения и незавершенные участки
+- мобильную оболочку: путь к репозиторию, скрипты сборки, `minSdk`/SDK, отличия от web (уведомления, фон)

@@ -21,6 +21,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/app/store/auth-store'
 import { apiBaseUrl, useBackendApi as useHttpAuthApi } from '@/shared/api/api-base'
+import { appFetch } from '@/shared/api/app-fetch'
+import { clearDonateBannerDismissForNewLogin } from '@/shared/lib/donate-banner-session'
 import { careQueryKeys } from '@/shared/api/care-client'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -89,10 +91,22 @@ const parseJson = async <T>(response: Response, schema: { parse: (value: unknown
     throw new Error(hint)
   }
   if (!response.ok) {
-    const message =
-      typeof (payload as { message?: unknown })?.message === 'string'
-        ? (payload as { message: string }).message
-        : 'Request failed'
+    const p = payload as { message?: string; details?: string[] }
+    let message = typeof p.message === 'string' ? p.message : 'Request failed'
+    const detail =
+      p.details && typeof p.details[0] === 'string' ? p.details[0] : undefined
+    if (detail) {
+      const generic = new Set([
+        'Validation failed',
+        'Constraint violation',
+        'Request failed',
+        'Bad Request',
+        'Unauthorized',
+      ])
+      if (generic.has(message)) {
+        message = detail
+      }
+    }
     throw new Error(message)
   }
 
@@ -107,7 +121,7 @@ const withAuthHeaders = (): Record<string, string> => {
 const httpAuthApi: AuthApi = {
   async login(payload) {
     const parsed = loginRequestSchema.parse(payload)
-    const response = await fetch(`${apiBaseUrl}/api/v1/auth/login`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,18 +132,24 @@ const httpAuthApi: AuthApi = {
   },
   async register(payload) {
     const parsed = registerRequestSchema.parse(payload)
-    const response = await fetch(`${apiBaseUrl}/api/v1/auth/register`, {
+    const body = {
+      ...parsed,
+      fullName: parsed.fullName.trim(),
+      email: parsed.email.trim(),
+      inviteCode: parsed.inviteCode?.trim() || undefined,
+    }
+    const response = await appFetch(`${apiBaseUrl}/api/v1/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(parsed),
+      body: JSON.stringify(body),
     })
     return parseJson(response, registerResponseSchema)
   },
   async createInvite(payload) {
     const parsed = createInviteRequestSchema.parse(payload)
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/invites`, {
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/invites`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -140,12 +160,12 @@ const httpAuthApi: AuthApi = {
     return parseJson(response, createInviteResponseSchema)
   },
   async getInviteByCode(code) {
-    const response = await fetch(`${apiBaseUrl}/api/v1/care/invites/${encodeURIComponent(code)}`)
+    const response = await appFetch(`${apiBaseUrl}/api/v1/care/invites/${encodeURIComponent(code)}`)
     return parseJson(response, lookupInviteResponseSchema)
   },
   async acceptInvite(payload) {
     const parsed = acceptInviteRequestSchema.parse(payload)
-    const response = await fetch(
+    const response = await appFetch(
       `${apiBaseUrl}/api/v1/care/invites/${encodeURIComponent(parsed.code)}/accept`,
       {
         method: 'POST',
@@ -178,6 +198,9 @@ export const useLoginMutation = () => {
   return useMutation({
     mutationFn: authApi.login,
     onSuccess: (response) => {
+      if (response.result.ok) {
+        clearDonateBannerDismissForNewLogin()
+      }
       syncAuthSession(response.session, response.accessToken)
       invalidateCareQueries(queryClient)
     },
@@ -189,6 +212,9 @@ export const useRegisterMutation = () => {
   return useMutation({
     mutationFn: authApi.register,
     onSuccess: (response) => {
+      if (response.result.ok) {
+        clearDonateBannerDismissForNewLogin()
+      }
       syncAuthSession(response.session, response.accessToken)
       invalidateCareQueries(queryClient)
     },

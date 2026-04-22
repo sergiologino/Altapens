@@ -72,6 +72,8 @@
 
 Если переменные для БД и JWT не заданы, подставляются значения из `application.yml` (для продакшена **обязательно** задать свой `JWT_SECRET`).
 
+**FCM (push с сервера):** по умолчанию выключено (`app.push.fcm.enabled=false`). Чтобы включить отправку уведомлений опекунам о пропущенном приёме лекарства, задайте `APP_PUSH_FCM_ENABLED=true` и путь к JSON ключу сервисного аккаунта Firebase: `APP_PUSH_FCM_SERVICE_ACCOUNT_JSON_PATH` или `GOOGLE_APPLICATION_CREDENTIALS`. Подробности — `docs/push-notifications.md`.
+
 ---
 
 ## 0. Весь стек в Docker (UI + API + PostgreSQL)
@@ -99,6 +101,10 @@ docker compose up --build
 ```
 
 Файлы: **`docker-compose.yml`**, **`apps/backend/Dockerfile`**, **`docker/web.Dockerfile`**, **`docker/nginx.conf`**, **`/.dockerignore`**. Для продакшена позже разнесите сервисы и домены так же, как сейчас разнесены порты.
+
+### Деплой в Coolify (таймаут сборки)
+
+Полный `docker compose build` поднимает **web**, **landing** и **backend** параллельно; **backend** тянет Gradle и зависимости — на слабом сервере или при холодном кэше это может занять **несколько минут**. Если в логе деплоя ошибка без текста Gradle сразу после `./gradlew bootJar`, проверьте **увеличение таймаута сборки** в настройках Coolify (приложение / сервер сборки) и что включён **Docker BuildKit** (по умолчанию в современных Docker). В `apps/backend/Dockerfile` зависимости Gradle кэшируются отдельным слоем и через `--mount=type=cache` для ускорения повторных деплоев.
 
 ---
 

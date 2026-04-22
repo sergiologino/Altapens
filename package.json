@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace web",
+    "dev:landing": "npm run dev --workspace landing",
     "build:web": "npm run build --workspace web",
+    "build:landing": "npm run build --workspace landing",
     "build:web:mobile": "npm run build --workspace web -- --base ./",
     "lint:web": "npm run lint --workspace web",
     "test:web": "npm run test --workspace web",

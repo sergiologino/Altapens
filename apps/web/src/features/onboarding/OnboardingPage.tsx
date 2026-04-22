@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { onboardingSlides } from '@/features/onboarding/onboarding-content'
+import { OnboardingIllustration } from '@/features/onboarding/OnboardingIllustration'
 import { useOnboardingStore } from '@/app/store/onboarding-store'
 
 const SWIPE_THRESHOLD_PX = 48
@@ -79,6 +80,9 @@ export const OnboardingPage = () => {
           aria-label={`${index + 1} из ${onboardingSlides.length}`}
         >
           <div className="onboarding-card-inner">
+            <div className="onboarding-slide-art">
+              <OnboardingIllustration art={slide.art} accent={slide.accent} />
+            </div>
             <p className="onboarding-kicker">Шаг {index + 1} из {onboardingSlides.length}</p>
             <h1 className="onboarding-title">{slide.title}</h1>
             <p className="onboarding-text">{slide.text}</p>

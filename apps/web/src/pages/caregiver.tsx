@@ -15,133 +15,100 @@ import {
   useTimelineQuery,
 } from '@/shared/api/mock-api'
 import { seniorOverviewMock } from '@/shared/api/mock-care-data'
-import {
-  ActionButton,
-  ActionLink,
-  AppShell,
-  MetricTile,
-  Pill,
-  SectionCard,
-  SectionHeader,
-  ShellNav,
-} from '@/shared/ui/primitives'
+import { CaregiverBottomNav } from '@/shared/ui/CaregiverBottomNav'
+import { ActionButton, ActionLink, Pill, SectionCard, SectionHeader } from '@/shared/ui/primitives'
 import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
-const caregiverLinks = [
-  { to: '/caregiver', label: 'Обзор' },
-  { to: '/caregiver/seniors', label: 'Подопечные' },
-  { to: '/caregiver/invites/new', label: 'Приглашения' },
-  { to: '/caregiver/medications/new', label: 'Лекарства' },
-  { to: '/caregiver/events', label: 'События' },
-  { to: '/caregiver/assistant', label: 'Помощник' },
-  { to: '/caregiver/settings', label: 'Настройки' },
-]
+const shortDisplayName = (fullName: string) => {
+  const part = fullName.trim().split(/\s+/)[0]
+  return part || fullName
+}
 
 const alertTone = (level: 'calm' | 'watch' | 'urgent') => level
 
-export const CaregiverLayout = () => {
-  const session = useAuthStore((state) => state.session)
-  const logout = useAuthStore((state) => state.logout)
-
-  return (
-    <AppShell
-      role="caregiver"
-      nav={
-        <ShellNav
-          title="Панель заботы"
-          subtitle="Разделы приложения"
-          links={caregiverLinks}
-          footer={
-            session ? (
-              <div className="nav-session">
-                <div>
-                  <strong>{session.fullName}</strong>
-                  <p>{session.email}</p>
-                </div>
-                <div className="nav-footer-actions">
-                  <ActionLink to="/caregiver/invites/new" tone="secondary">
-                    Новый код приглашения
-                  </ActionLink>
-                  <ActionButton tone="ghost" onClick={logout}>
-                    Выйти
-                  </ActionButton>
-                </div>
-              </div>
-            ) : null
-          }
-        />
-      }
-    >
+export const CaregiverLayout = () => (
+  <div className="caregiver-app-shell shell-caregiver">
+    <div className="decor-orb decor-orb-primary" aria-hidden="true" />
+    <div className="decor-orb decor-orb-secondary" aria-hidden="true" />
+    <div className="caregiver-app-scroll">
       <FirstSessionTips role="caregiver" />
       <Outlet />
-    </AppShell>
-  )
-}
+    </div>
+    <CaregiverBottomNav />
+  </div>
+)
 
 export const CaregiverDashboardPage = () => {
   const { data } = useCaregiverDashboardQuery()
+
   if (!data) return null
+
+  const seniors = data.seniors
+  const overviewMetrics = data.todayMetrics.filter((m) => m.label !== 'Подопечных')
+  const watchItems = data.attentionItems.filter((a) => a.level !== 'calm')
 
   return (
     <div className="page-stack">
-      <SectionCard tone="accent" className="hero-card caregiver-hero">
-        <span className="eyebrow">Здравствуйте, {data.caregiver.displayName}</span>
-        <h2 className="hero-card-title">Обзор на сегодня</h2>
-        <p className="hero-card-text">
-          Сводка по подопечным: самочувствие, приёмы лекарств и события за день.
-        </p>
-        <div className="metric-grid">
-          {data.todayMetrics.map((metric) => (
-            <MetricTile key={metric.label} label={metric.label} value={metric.value} tone={metric.tone} />
+      <h1 className="caregiver-page-title">Обзор</h1>
+      <p className="caregiver-overview-line" style={{ marginTop: '-0.25rem', fontSize: '0.8125rem' }}>
+        {data.caregiver.displayName}, кратко на сегодня. Список людей — в разделе «Подопечные».
+      </p>
+
+      {seniors.length === 0 ? (
+        <SectionCard className="caregiver-compact-card">
+          <SectionHeader
+            eyebrow="Сеть заботы"
+            title="Пока нет подопечных"
+            description="Добавьте близкого через приглашение в разделе «Подопечные»."
+          />
+          <ActionLink to="/caregiver/seniors" tone="secondary">
+            Перейти к подопечным
+          </ActionLink>
+        </SectionCard>
+      ) : null}
+
+      {overviewMetrics.length > 0 ? (
+        <div className="caregiver-overview-metrics">
+          {overviewMetrics.map((m) => (
+            <div
+              key={m.label}
+              className={`caregiver-metric-chip caregiver-metric-chip--${m.tone}`}
+            >
+              <span className="caregiver-metric-chip-label">{m.label}</span>
+              <span className="caregiver-metric-chip-value">{m.value}</span>
+            </div>
           ))}
         </div>
-      </SectionCard>
+      ) : null}
 
-      <div className="panel-grid panel-grid-2">
-        <SectionCard>
-          <SectionHeader
-            eyebrow="Подопечные"
-            title="Как дела сейчас"
-            description="Список подопечных и краткий статус."
-          />
-          <div className="list-stack">
-            {data.seniors.map((senior) => (
-              <article key={senior.id} className="list-item">
-                <div>
-                  <strong>{senior.fullName}</strong>
-                  <p>{senior.medicationProgress}</p>
-                  <small>{senior.nextReminder}</small>
-                </div>
-                <div className="button-row wrap-row" style={{ justifyContent: 'flex-end' }}>
-                  <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
-                  <ActionLink to={`/caregiver/seniors/${senior.id}`} tone="ghost">
-                    Открыть
-                  </ActionLink>
-                </div>
-              </article>
+      {watchItems.length > 0 ? (
+        <SectionCard className="caregiver-compact-card">
+          <SectionHeader eyebrow="Внимание" title="Сигналы на сегодня" />
+          <ul className="caregiver-attn-compact-list">
+            {watchItems.map((a) => (
+              <li key={a.id}>
+                <strong>{a.title}</strong> — {a.description}{' '}
+                <span className="caregiver-attn-meta">({a.timeLabel})</span>
+              </li>
             ))}
-          </div>
-          <div className="card-actions-below">
-            <ActionLink to="/caregiver/seniors" tone="ghost">
-              Все подопечные
-            </ActionLink>
-          </div>
+          </ul>
         </SectionCard>
-        <SectionCard>
+      ) : null}
+
+      {data.aiSummaries.length > 0 ? (
+        <SectionCard className="caregiver-compact-card">
           <SectionHeader
-            eyebrow="Помощник"
-            title="Коротко о дне"
-            description="Текстовые подсказки по данным за сегодня."
+            eyebrow="Подсказки"
+            title="На сегодня"
+            description="Без повтора списка подопечных — он в отдельном разделе."
           />
-          <div className="list-stack">
-            {data.aiSummaries.map((summary) => (
-              <article key={summary} className="mini-card">
-                <p>{summary}</p>
-              </article>
+          <ul className="caregiver-hint-list">
+            {data.aiSummaries.map((summary, idx) => (
+              <li key={`${idx}-${summary.slice(0, 48)}`}>{summary}</li>
             ))}
-          </div>
+          </ul>
         </SectionCard>
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -152,20 +119,29 @@ export const CaregiverSeniorsPage = () => {
 
   return (
     <div className="page-stack">
-      <SectionCard>
+      <div className="caregiver-invite-banner">
+        <div>
+          <strong>Пригласить подопечного</strong>
+          <p className="caregiver-banner-text">Создайте код — близкий сможет войти в вашу сеть заботы.</p>
+        </div>
+        <ActionLink to="/caregiver/invites/new" tone="secondary">
+          Создать код
+        </ActionLink>
+      </div>
+      <SectionCard className="caregiver-compact-card">
         <SectionHeader
           eyebrow="Список подопечных"
           title="Семья и близкие"
-          description="Все подопечные, привязанные к вашему аккаунту."
+          description="Карточки, лекарства и приглашения — отсюда."
           action={
             data.seniors[0] ? (
               <ActionLink to={`/caregiver/seniors/${data.seniors[0].id}`}>
-                Карточка: {data.seniors[0].fullName}
+                Открыть: {shortDisplayName(data.seniors[0].fullName)}
               </ActionLink>
             ) : null
           }
         />
-        <div className="card-grid">
+        <div className="card-grid caregiver-seniors-grid">
           {data.seniors.map((senior) => (
             <article key={senior.id} className="mini-card">
               <Pill tone={alertTone(senior.attentionLevel)}>{senior.currentState}</Pill>
@@ -362,14 +338,32 @@ export const CaregiverAssistantPage = () => (
   </div>
 )
 
-export const CaregiverSettingsPage = () => (
-  <div className="page-stack">
-    <SectionCard>
-      <SectionHeader
-        eyebrow="Настройки"
-        title="Экран и разделы"
-        description="Тема оформления и переходы к разделам приложения."
-      />
+export const CaregiverSettingsPage = () => {
+  const session = useAuthStore((s) => s.session)
+  const logout = useAuthStore((s) => s.logout)
+
+  return (
+    <div className="page-stack">
+      <SectionCard>
+        {session ? (
+          <div className="settings-session-block">
+            <strong>{session.fullName}</strong>
+            <p>{session.email}</p>
+            <div className="button-row wrap-row">
+              <ActionLink to="/caregiver/seniors" tone="secondary">
+                Подопечные и коды
+              </ActionLink>
+              <ActionButton tone="ghost" onClick={logout}>
+                Выйти
+              </ActionButton>
+            </div>
+          </div>
+        ) : null}
+        <SectionHeader
+          eyebrow="Настройки"
+          title="Экран и разделы"
+          description="Тема оформления и переходы к разделам приложения."
+        />
       <div className="settings-theme-block">
         <h3 className="settings-subheading">Тема</h3>
         <ThemeToggle />
@@ -379,10 +373,10 @@ export const CaregiverSettingsPage = () => (
         <li>
           <div className="settings-nav-row">
             <div className="settings-nav-row-main">
-              <h3>Приглашения в семью</h3>
-              <p>Создать код и список приглашений.</p>
+              <h3>Подопечные и приглашения</h3>
+              <p>Список людей, карточки и создание кода приглашения — в одном разделе.</p>
             </div>
-            <ActionLink to="/caregiver/invites/new" tone="secondary">
+            <ActionLink to="/caregiver/seniors" tone="secondary">
               Открыть
             </ActionLink>
           </div>
@@ -410,8 +404,9 @@ export const CaregiverSettingsPage = () => (
         </li>
       </ul>
     </SectionCard>
-  </div>
-)
+    </div>
+  )
+}
 
 export const CaregiverInviteCreatePage = () => {
   const session = useAuthStore((state) => state.session)
@@ -419,11 +414,21 @@ export const CaregiverInviteCreatePage = () => {
   const relationships = useAuthStore((state) => state.relationships)
   const createInviteMutation = useCreateInviteMutation()
   const [latestCode, setLatestCode] = useState('')
+  const [createError, setCreateError] = useState('')
   const useHttp = useBackendApi
   const remoteInvites = useCareInvitesRemoteQuery()
   const invites = useHttp
     ? (remoteInvites.data ?? [])
     : allInvites.filter((invite) => invite.createdByUserId === session?.id)
+
+  const copyCode = async () => {
+    if (!latestCode) return
+    try {
+      await navigator.clipboard.writeText(latestCode)
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <div className="page-stack">
@@ -436,24 +441,47 @@ export const CaregiverInviteCreatePage = () => {
         <div className="button-row wrap-row">
           <ActionButton
             onClick={async () => {
-              const response = await createInviteMutation.mutateAsync({
-                targetRole: 'senior',
-                note: 'Приглашение для подключения к семейной сети заботы.',
-              })
-              setLatestCode(response.invite.code)
+              setCreateError('')
+              try {
+                const response = await createInviteMutation.mutateAsync({
+                  targetRole: 'senior',
+                  note: 'Приглашение для подключения к семейной сети заботы.',
+                })
+                const code = response.invite?.code?.trim()
+                if (!code) {
+                  setCreateError('Сервер не вернул код приглашения. Попробуйте ещё раз или проверьте ответ API.')
+                  return
+                }
+                setLatestCode(code)
+              } catch (e) {
+                setCreateError(
+                  e instanceof Error ? e.message : 'Не удалось создать код. Проверьте сеть и авторизацию.',
+                )
+              }
             }}
           >
             {createInviteMutation.isPending ? 'Создаём код...' : 'Создать код для подопечного'}
           </ActionButton>
           {latestCode ? (
-            <ActionLink to={`/auth/invite?code=${latestCode}`} tone="secondary">
+            <ActionLink to={`/auth/invite?code=${encodeURIComponent(latestCode)}`} tone="secondary">
               Открыть ссылку принятия
             </ActionLink>
           ) : null}
         </div>
+        {createError ? (
+          <p className="invite-code-error" role="alert">
+            {createError}
+          </p>
+        ) : null}
         {latestCode ? (
-          <div className="form-feedback">
-            Новый код: <strong>{latestCode}</strong>
+          <div className="invite-code-panel">
+            <span className="invite-code-panel-label">Передайте подопечному</span>
+            <code className="invite-code-panel-value">{latestCode}</code>
+            <div className="invite-code-panel-actions">
+              <ActionButton type="button" tone="secondary" onClick={() => void copyCode()}>
+                Скопировать код
+              </ActionButton>
+            </div>
           </div>
         ) : null}
       </SectionCard>

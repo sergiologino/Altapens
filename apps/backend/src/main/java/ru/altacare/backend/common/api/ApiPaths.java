@@ -5,6 +5,8 @@ public final class ApiPaths {
     public static final String API_V1 = "/api/v1";
     public static final String AUTH = API_V1 + "/auth";
     public static final String CARE = API_V1 + "/care";
+    public static final String NOTIFICATIONS = API_V1 + "/notifications";
+    public static final String PAYMENTS = API_V1 + "/payments";
 
     private ApiPaths() {
     }

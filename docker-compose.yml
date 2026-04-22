@@ -1,5 +1,7 @@
 # Полный стек для проверки UI/UX и API: PostgreSQL + Spring Boot + nginx (статика + прокси /api).
-# Приложение в браузере: http://localhost:3080  (один origin, без CORS к backend).
+# Веб-приложение (SPA): http://localhost:3080 — один origin с API, без CORS к backend.
+# Лендинг Next.js (SSR): http://localhost:3081 — задайте NEXT_PUBLIC_APP_URL=http://localhost:3080, чтобы кнопки вели в SPA.
+# В проде обычно: сайт https://altapens.ru , приложение https://app.altapens.ru (см. docker-compose.coolify.yml).
 # Прямой доступ к API/Swagger (опционально): http://localhost:8090/swagger-ui/index.html
 #
 # Если порт 5432 занят локальным Postgres — смените проброс, например "5433:5432",
@@ -12,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: altacare
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: TempPass_123456789
     ports:
       - "5432:5432"
     volumes:
@@ -30,14 +32,14 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/altacare
       DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: TempPass_123456789
       JWT_SECRET: ${JWT_SECRET:-docker-local-dev-jwt-secret-min-32-chars!!}
       SERVER_PORT: "8080"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 8
@@ -59,6 +61,21 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      landing:
+        condition: service_started
+
+  landing:
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3081}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3080}
+    container_name: altapens-landing
+    ports:
+      - "3081:3000"
+    environment:
+      NODE_ENV: production
 
   # Опционально: Qwen3-TTS на GPU (отдельный профиль, не мешает основному стеку).
   # Запуск: docker compose --profile tts up -d tts-qwen

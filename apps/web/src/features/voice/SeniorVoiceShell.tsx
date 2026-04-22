@@ -4,10 +4,29 @@ import { useAccessibilityStore } from '@/app/store/accessibility-store'
 import { useBackendApi } from '@/shared/api/api-base'
 import { useRecordMedicationIntakeMutation, useRecordWellbeingCheckinMutation } from '@/shared/api/care-client'
 import { useSeniorOverviewQuery } from '@/shared/api/mock-api'
+import { parseDoseSlotId } from '@/features/voice/voice-dose-id'
+import { parseTranscriptToIntent } from '@/features/voice/voice-intents'
 import {
-  parseDoseSlotId,
-  parseTranscriptToIntent,
-} from '@/features/voice/voice-intents'
+  pickVoiceVariant,
+  replyBackendNeededForCare,
+  replyCheckinSaved,
+  replyConfirmCancelled,
+  replyDrugNameRetryFailed,
+  replyDrugNameRetryPrompt,
+  pickMissedConfirmPrompt,
+  pickSnoozeConfirmPrompt,
+  replyMedicationMissedRecorded,
+  replyMedicationSnoozedRecorded,
+  replyMedicationTakenSuccess,
+  replyMicNotAllowed,
+  replyNavigateSos,
+  replyNoMedicationInSchedule,
+  replySaveError,
+  replySaveErrorShort,
+  replySttError,
+  replyUnknownCommand,
+  replyVitalsNoteSaved,
+} from '@/features/voice/voice-natural-replies'
 import { routeVoiceIntro } from '@/features/voice/voice-route-prompts'
 import { runSpeechSession, isSpeechRecognitionSupported } from '@/features/voice/voice-stt'
 import { isSpeechSynthesisSupported, speak, stopSpeaking } from '@/features/voice/voice-tts'
@@ -67,7 +86,7 @@ export function SeniorVoiceShell() {
       if (!pending || pending.kind !== 'medication') return
       const parsed = parseDoseSlotId(pending.doseId)
       if (!parsed || !useHttp) {
-        await speak('Не могу отметить без подключения к сети врача.')
+        await speak(replyBackendNeededForCare())
         setPending(null)
         return
       }
@@ -77,34 +96,69 @@ export function SeniorVoiceShell() {
           slotIndex: parsed.slotIndex,
           status: pending.action === 'missed' ? 'missed' : 'snoozed',
         })
-        await speak(pending.action === 'missed' ? 'Пропуск записан.' : 'Отложено записано.')
+        await speak(
+          pending.action === 'missed' ? replyMedicationMissedRecorded() : replyMedicationSnoozedRecorded(),
+        )
       } catch {
-        await speak('Не получилось сохранить. Попробуйте ещё раз.')
+        await speak(replySaveErrorShort())
       }
       setPending(null)
     }
 
-    if (pending) {
+    if (pending?.kind === 'drug_name_retry') {
+      const intent = parseTranscriptToIntent(raw, doses, {
+        mode: 'drug_name_repeat',
+        at: new Date(),
+      })
+      if (intent.type === 'medication' && intent.action === 'taken') {
+        if (!useHttp) {
+          await speak(replyBackendNeededForCare())
+          setPending(null)
+          return
+        }
+        const uniqueIds = [...new Set(intent.doseIds)]
+        try {
+          for (const did of uniqueIds) {
+            const parsed = parseDoseSlotId(did)
+            if (!parsed) continue
+            await intake.mutateAsync({
+              medicationId: parsed.medicationId,
+              slotIndex: parsed.slotIndex,
+              status: 'taken',
+            })
+          }
+          await speak(replyMedicationTakenSuccess(uniqueIds, doses))
+          setPending(null)
+        } catch {
+          await speak(replySaveError())
+        }
+        return
+      }
+      await speak(replyDrugNameRetryFailed())
+      return
+    }
+
+    if (pending?.kind === 'medication') {
       const intentEarly = parseTranscriptToIntent(raw, doses)
       if (intentEarly.type === 'confirm_yes') {
         await execPendingYes()
         return
       }
       setPending(null)
-      await speak('Подтверждение отменено. Скажите команду снова.')
+      await speak(replyConfirmCancelled())
     }
 
     const intent = parseTranscriptToIntent(raw, doses)
 
     switch (intent.type) {
       case 'navigate_sos': {
-        await speak('Открываю экстренную помощь.')
+        await speak(replyNavigateSos())
         navigate('/senior/sos')
         break
       }
       case 'checkin': {
         if (!useHttp) {
-          await speak('Запись самочувствия по голосу работает при подключении приложения к сети врача.')
+          await speak(replyBackendNeededForCare())
           break
         }
         try {
@@ -112,15 +166,15 @@ export function SeniorVoiceShell() {
             state: intent.state,
             note: intent.note,
           })
-          await speak('Сохранила, как вы себя чувствуете.')
+          await speak(replyCheckinSaved())
         } catch {
-          await speak('Не получилось сохранить. Проверьте связь.')
+          await speak(replySaveErrorShort())
         }
         break
       }
       case 'vitals_note': {
         if (!useHttp) {
-          await speak('Запись показателей нужна при подключении к сети врача.')
+          await speak(replyBackendNeededForCare())
           break
         }
         try {
@@ -128,61 +182,80 @@ export function SeniorVoiceShell() {
             state: 'good',
             note: intent.note,
           })
-          await speak('Записала ваши слова в отметку для близких.')
+          await speak(replyVitalsNoteSaved())
         } catch {
-          await speak('Не получилось сохранить. Проверьте связь.')
+          await speak(replySaveErrorShort())
         }
         break
       }
       case 'medication': {
         if (!useHttp) {
-          await speak(
-            'Запись приёма таблеток по голосу работает, когда приложение подключено к сети врача.',
-          )
+          await speak(replyBackendNeededForCare())
           break
         }
-        const parsed = parseDoseSlotId(intent.doseId)
-        if (!parsed) {
-          await speak('Не нашла подходящее лекарство в расписании на сегодня.')
+        const ids = [...new Set(intent.doseIds)].filter((id) => parseDoseSlotId(id))
+        if (ids.length === 0) {
+          await speak(replyNoMedicationInSchedule())
           break
         }
         if (intent.action === 'missed' || intent.action === 'snoozed') {
-          const title = doses.find((d) => d.id === intent.doseId)?.title ?? 'лекарство'
+          const firstId = ids[0]!
+          const title = doses.find((d) => d.id === firstId)?.title ?? 'лекарство'
           setPending({
             kind: 'medication',
-            doseId: intent.doseId,
+            doseId: firstId,
             action: intent.action,
             title,
           })
           await speak(
             intent.action === 'missed'
-              ? `Записать пропуск для «${title}»? Скажите «да», чтобы подтвердить.`
-              : `Отложить приём «${title}»? Скажите «да», чтобы подтвердить.`,
+              ? pickMissedConfirmPrompt(title)
+              : pickSnoozeConfirmPrompt(title),
           )
           break
         }
         try {
-          await intake.mutateAsync({
-            medicationId: parsed.medicationId,
-            slotIndex: parsed.slotIndex,
-            status: 'taken',
-          })
-          await speak('Отметила, что вы приняли лекарство.')
+          for (const did of ids) {
+            const parsed = parseDoseSlotId(did)
+            if (!parsed) continue
+            await intake.mutateAsync({
+              medicationId: parsed.medicationId,
+              slotIndex: parsed.slotIndex,
+              status: 'taken',
+            })
+          }
+          await speak(replyMedicationTakenSuccess(ids, doses))
         } catch {
-          await speak('Не получилось сохранить. Повторите или отметьте кнопкой.')
+          await speak(replySaveError())
         }
+        break
+      }
+      case 'medication_not_recognized': {
+        if (!useHttp) {
+          await speak(replyBackendNeededForCare())
+          break
+        }
+        setPending({ kind: 'drug_name_retry', action: 'taken' })
+        await speak(replyDrugNameRetryPrompt())
         break
       }
       case 'unknown':
       default:
-        await speak('Не разобрала. Скажите коротко, например: принял и название таблетки.')
+        await speak(replyUnknownCommand())
     }
   }
 
   const onPointerDown = () => {
     if (!voiceEnabled || busy) return
     if (!sttOk) {
-      if (ttsOk) void speak('Голосовой ввод в этом браузере недоступен. Пользуйтесь кнопками.')
+      if (ttsOk) {
+        void speak(
+          pickVoiceVariant([
+            'Голосовой ввод в этом браузере недоступен. Пользуйтесь кнопками.',
+            'Распознавание речи здесь не работает — лучше нажимайте кнопки на экране.',
+          ]),
+        )
+      }
       return
     }
     stopSpeaking()
@@ -197,9 +270,9 @@ export function SeniorVoiceShell() {
         if (code === 'no-speech') {
           setStatusLine('Не расслышала. Попробуйте ещё раз.')
         } else if (code === 'not-allowed') {
-          setStatusLine('Разрешите микрофон в настройках браузера.')
+          setStatusLine(replyMicNotAllowed())
         } else if (code !== 'aborted') {
-          setStatusLine('Ошибка распознавания. Повторите.')
+          setStatusLine(replySttError())
         }
       },
     })

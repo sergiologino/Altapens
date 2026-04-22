@@ -10,21 +10,10 @@ export const RolePortalPage = () => (
         Два понятных режима в одном приложении: крупный и спокойный экран для пожилого человека и
         удобная панель для детей и родственников.
       </p>
-      <div className="button-row">
-        <ActionLink to="/auth/login">Войти</ActionLink>
-        <ActionLink to="/auth/register" tone="secondary">
-          Создать профиль
-        </ActionLink>
-        <ActionLink to="/auth/invite" tone="ghost">
-          Принять приглашение
-        </ActionLink>
-      </div>
       <div className="button-row wrap-row">
-        <ActionLink to="/auth/login?role=senior" tone="secondary">
-          Вход как подопечный
-        </ActionLink>
-        <ActionLink to="/auth/login?role=caregiver" tone="secondary">
-          Вход как родственник
+        <ActionLink to="/auth/login">Вход</ActionLink>
+        <ActionLink to="/auth/invite" tone="secondary">
+          Принять приглашение
         </ActionLink>
       </div>
       <p className="portal-onboarding-link">

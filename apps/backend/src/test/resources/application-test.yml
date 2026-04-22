@@ -18,3 +18,9 @@ app:
     jwt-secret: test-secret-test-secret-test-secret
     issuer: altacare-backend-test
     access-token-ttl: PT12H
+  push:
+    fcm:
+      enabled: false
+  yookassa:
+    enabled: false
+    public-app-url: http://localhost:5173

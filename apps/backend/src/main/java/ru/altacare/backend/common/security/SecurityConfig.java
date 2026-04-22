@@ -39,6 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(POST, ApiPaths.AUTH + "/register", ApiPaths.AUTH + "/login").permitAll()
                         .requestMatchers(GET, ApiPaths.CARE + "/invites/*").permitAll()
+                        .requestMatchers(POST, ApiPaths.PAYMENTS + "/donations").permitAll()
+                        .requestMatchers(GET, ApiPaths.PAYMENTS + "/donations/*/status").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
